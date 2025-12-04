@@ -6,7 +6,12 @@ import axios, {
 } from "axios";
 
 // Base API configuration
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:2053";
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:2053/api";
+
+// Storage keys
+const TOKEN_KEY = "money_notebook_token";
+const CODE_KEY = "money_notebook_code";
 
 // API Response interface
 export interface ApiResponse<T = unknown> {
@@ -14,7 +19,48 @@ export interface ApiResponse<T = unknown> {
   data?: T;
   message?: string;
   error?: string;
+  meta?: {
+    total: number;
+    page: number;
+    limit: number;
+  };
 }
+
+// Token management
+export const tokenManager = {
+  getToken: (): string | null => {
+    if (typeof window === "undefined") return null;
+    return localStorage.getItem(TOKEN_KEY);
+  },
+  setToken: (token: string): void => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem(TOKEN_KEY, token);
+    }
+  },
+  removeToken: (): void => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem(TOKEN_KEY);
+    }
+  },
+  getCode: (): string | null => {
+    if (typeof window === "undefined") return null;
+    return localStorage.getItem(CODE_KEY);
+  },
+  setCode: (code: string): void => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem(CODE_KEY, code);
+    }
+  },
+  removeCode: (): void => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem(CODE_KEY);
+    }
+  },
+  clear: (): void => {
+    tokenManager.removeToken();
+    tokenManager.removeCode();
+  },
+};
 
 // Base API class - inherit from this for all services
 export class BaseApi {
@@ -32,14 +78,11 @@ export class BaseApi {
     // Request interceptor
     this.api.interceptors.request.use(
       (config: InternalAxiosRequestConfig) => {
-        // Get user code from localStorage for auth
-        const userCode =
-          typeof window !== "undefined"
-            ? localStorage.getItem("money_notebook_code")
-            : null;
+        // Get token from localStorage for auth
+        const token = tokenManager.getToken();
 
-        if (userCode) {
-          config.headers.set("X-User-Code", userCode);
+        if (token) {
+          config.headers.set("Authorization", `Bearer ${token}`);
         }
 
         return config;
@@ -60,9 +103,9 @@ export class BaseApi {
           const { status } = error.response;
 
           if (status === 401) {
-            // Unauthorized - clear user code and redirect to login
+            // Unauthorized - clear token and redirect to login
+            tokenManager.clear();
             if (typeof window !== "undefined") {
-              localStorage.removeItem("money_notebook_code");
               window.location.reload();
             }
           }

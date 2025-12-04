@@ -3,28 +3,29 @@
 import { useState, useEffect } from "react";
 import LoginForm from "./components/LoginForm";
 import Dashboard from "./components/Dashboard";
-
-const STORAGE_KEY = "money_notebook_code";
+import { authService } from "./services/authService";
 
 export default function Home() {
   const [userCode, setUserCode] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const savedCode = localStorage.getItem(STORAGE_KEY);
-    if (savedCode) {
-      setUserCode(savedCode);
+    // Kiểm tra nếu đã có token và code
+    if (authService.isAuthenticated()) {
+      const savedCode = authService.getSavedCode();
+      if (savedCode) {
+        setUserCode(savedCode);
+      }
     }
     setIsLoading(false);
   }, []);
 
   const handleLogin = (code: string) => {
-    localStorage.setItem(STORAGE_KEY, code);
     setUserCode(code);
   };
 
   const handleLogout = () => {
-    localStorage.removeItem(STORAGE_KEY);
+    authService.logout();
     setUserCode(null);
   };
 

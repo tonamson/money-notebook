@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Input, Button, message } from "antd";
 import { WalletOutlined, KeyOutlined, PlusOutlined } from "@ant-design/icons";
+import { authService } from "../services/authService";
 
 interface LoginFormProps {
   onLogin: (code: string) => void;
@@ -12,17 +13,28 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const generateCode = () => {
-    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    let result = "";
-    for (let i = 0; i < 12; i++) {
-      result += chars.charAt(Math.floor(Math.random() * chars.length));
+  const generateCode = async () => {
+    try {
+      const response = await authService.generateCode();
+      if (response.success && response.data) {
+        setCode(response.data.code);
+        message.success("Đã tạo mã mới! Hãy lưu lại mã này.");
+      } else {
+        message.error(response.error || "Không thể tạo mã");
+      }
+    } catch {
+      // Fallback to local generation if API fails
+      const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+      let result = "";
+      for (let i = 0; i < 12; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      setCode(result);
+      message.success("Đã tạo mã mới! Hãy lưu lại mã này.");
     }
-    setCode(result);
-    message.success("Đã tạo mã mới! Hãy lưu lại mã này.");
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (code.length !== 12) {
       message.error("Mã truy cập phải có đúng 12 ký tự");
       return;
@@ -31,11 +43,21 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
       message.error("Mã truy cập chỉ chứa chữ cái và số");
       return;
     }
+
     setLoading(true);
-    setTimeout(() => {
-      onLogin(code.toUpperCase());
+    try {
+      const response = await authService.login(code.toUpperCase());
+      if (response.success) {
+        message.success("Đăng nhập thành công!");
+        onLogin(code.toUpperCase());
+      } else {
+        message.error(response.error || "Đăng nhập thất bại");
+      }
+    } catch {
+      message.error("Không thể kết nối server");
+    } finally {
       setLoading(false);
-    }, 500);
+    }
   };
 
   return (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import {
   Button,
   Tag,
@@ -13,9 +13,8 @@ import {
   Select,
   Empty,
   Popconfirm,
-  message,
-  Divider,
-  Space,
+  Spin,
+  App,
 } from "antd";
 import type { FormProps } from "antd";
 import {
@@ -30,15 +29,11 @@ import {
 } from "@ant-design/icons";
 import dayjs, { Dayjs } from "dayjs";
 import { categoryService, Category } from "../services/categoryService";
-
-interface Transaction {
-  id: string;
-  type: "income" | "expense";
-  amount: number;
-  category: string;
-  note: string;
-  date: string;
-}
+import {
+  transactionService,
+  Transaction,
+  TransactionStats,
+} from "../services/transactionService";
 
 // Form field type
 type TransactionFieldType = {
@@ -54,56 +49,12 @@ interface DashboardProps {
   onLogout: () => void;
 }
 
-// Demo data
-const generateDemoData = (): Transaction[] => {
-  const now = dayjs();
-  return [
-    {
-      id: "1",
-      type: "income",
-      amount: 15000000,
-      category: "Lương",
-      note: "Lương tháng 12",
-      date: now.date(5).hour(9).minute(0).format("YYYY-MM-DD HH:mm"),
-    },
-    {
-      id: "2",
-      type: "expense",
-      amount: 3500000,
-      category: "Hóa đơn",
-      note: "Tiền nhà tháng 12",
-      date: now.date(1).hour(10).minute(30).format("YYYY-MM-DD HH:mm"),
-    },
-    {
-      id: "3",
-      type: "expense",
-      amount: 500000,
-      category: "Ăn uống",
-      note: "Đi ăn với bạn bè",
-      date: now.date(3).hour(19).minute(15).format("YYYY-MM-DD HH:mm"),
-    },
-    {
-      id: "4",
-      type: "income",
-      amount: 2000000,
-      category: "Thưởng",
-      note: "Thưởng dự án",
-      date: now.date(10).hour(14).minute(45).format("YYYY-MM-DD HH:mm"),
-    },
-    {
-      id: "5",
-      type: "expense",
-      amount: 1200000,
-      category: "Mua sắm",
-      note: "Mua quần áo",
-      date: now.date(15).hour(16).minute(20).format("YYYY-MM-DD HH:mm"),
-    },
-  ];
-};
-
 export default function Dashboard({ userCode, onLogout }: DashboardProps) {
-  const [transactions, setTransactions] =
-    useState<Transaction[]>(generateDemoData);
+  const { message } = App.useApp();
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
   // Mặc định chọn từ đầu tháng đến cuối tháng hiện tại
   const [dateRange, setDateRange] = useState<[Dayjs, Dayjs]>([
     dayjs().startOf("month"),
@@ -119,18 +70,24 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
   const [transactionType, setTransactionType] = useState<"income" | "expense">(
     "expense"
   );
+
   // Categories từ API
   const [incomeCategories, setIncomeCategories] = useState<Category[]>([]);
   const [expenseCategories, setExpenseCategories] = useState<Category[]>([]);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [loadingCategories, setLoadingCategories] = useState(false);
 
-  // Load categories from API
-  useEffect(() => {
-    loadCategories();
-  }, []);
+  // Stats
+  const [stats, setStats] = useState<TransactionStats>({
+    totalIncome: 0,
+    totalExpense: 0,
+    balance: 0,
+    startDate: "",
+    endDate: "",
+  });
 
-  const loadCategories = async () => {
+  // Load categories from API
+  const loadCategories = useCallback(async () => {
     setLoadingCategories(true);
     try {
       const [incomeRes, expenseRes] = await Promise.all([
@@ -148,27 +105,70 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
     } finally {
       setLoadingCategories(false);
     }
-  };
+  }, []);
+
+  // Load transactions from API
+  const loadTransactions = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await transactionService.getTransactions({
+        startDate: dateRange[0].format("YYYY-MM-DD"),
+        endDate: dateRange[1].format("YYYY-MM-DD"),
+      });
+      if (response.success && response.data) {
+        setTransactions(response.data);
+      }
+    } catch {
+      message.error("Không thể tải giao dịch");
+    } finally {
+      setLoading(false);
+    }
+  }, [dateRange]);
+
+  // Load stats from API
+  const loadStats = useCallback(async () => {
+    try {
+      const response = await transactionService.getStats(
+        dateRange[0].format("YYYY-MM-DD"),
+        dateRange[1].format("YYYY-MM-DD")
+      );
+      if (response.success && response.data) {
+        setStats(response.data);
+      }
+    } catch {
+      console.error("Không thể tải thống kê");
+    }
+  }, [dateRange]);
+
+  useEffect(() => {
+    loadCategories();
+  }, [loadCategories]);
+
+  useEffect(() => {
+    loadTransactions();
+    loadStats();
+  }, [loadTransactions, loadStats]);
 
   // Thêm category mới qua API
   const handleAddCategory = async () => {
     if (!newCategoryName.trim()) return;
 
     const trimmed = newCategoryName.trim();
-    const exists = await categoryService.categoryExists(
+
+    // Check if category exists
+    const checkRes = await categoryService.checkExists(
       trimmed,
       transactionType
     );
-
-    if (exists) {
+    if (checkRes.success && checkRes.data?.exists) {
       message.warning("Danh mục đã tồn tại");
       return;
     }
 
-    const result = await categoryService.createCategory(
-      trimmed,
-      transactionType
-    );
+    const result = await categoryService.createCategory({
+      name: trimmed,
+      type: transactionType,
+    });
 
     if (result.success && result.data) {
       if (transactionType === "income") {
@@ -183,17 +183,6 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
       message.error(result.error || "Không thể thêm danh mục");
     }
   };
-
-  // Filter transactions by date range
-  const filteredTransactions = useMemo(() => {
-    return transactions.filter((t) => {
-      const tDate = dayjs(t.date);
-      return (
-        tDate.isAfter(dateRange[0].subtract(1, "day")) &&
-        tDate.isBefore(dateRange[1].add(1, "day"))
-      );
-    });
-  }, [transactions, dateRange]);
 
   // Format date range for display
   const dateRangeLabel = useMemo(() => {
@@ -210,17 +199,6 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
     }
     return `${start.format("DD/MM/YYYY")} - ${end.format("DD/MM/YYYY")}`;
   }, [dateRange]);
-
-  // Calculate statistics
-  const stats = useMemo(() => {
-    const income = filteredTransactions
-      .filter((t) => t.type === "income")
-      .reduce((sum, t) => sum + t.amount, 0);
-    const expense = filteredTransactions
-      .filter((t) => t.type === "expense")
-      .reduce((sum, t) => sum + t.amount, 0);
-    return { income, expense, balance: income - expense };
-  }, [filteredTransactions]);
 
   // Format số tiền đầy đủ, chỉ số không có đơn vị tiền
   const formatNumber = (value: number) => {
@@ -244,41 +222,87 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
     form.setFieldsValue({
       type: record.type,
       amount: record.amount,
-      category: record.category,
+      category: record.categoryName,
       note: record.note,
-      date: dayjs(record.date),
+      date: dayjs(record.transactionDate),
     });
     setIsModalOpen(true);
   };
 
-  const handleDeleteTransaction = (id: string) => {
-    setTransactions((prev) => prev.filter((t) => t.id !== id));
-    message.success("Đã xóa giao dịch");
+  const handleDeleteTransaction = async (id: number) => {
+    try {
+      const response = await transactionService.deleteTransaction(id);
+      if (response.success) {
+        message.success("Đã xóa giao dịch");
+        loadTransactions();
+        loadStats();
+      } else {
+        message.error(response.error || "Không thể xóa giao dịch");
+      }
+    } catch {
+      message.error("Không thể xóa giao dịch");
+    }
   };
 
   // Form handlers
-  const onFinish: FormProps<TransactionFieldType>["onFinish"] = (values) => {
-    const transaction: Transaction = {
-      id: editingTransaction?.id || Date.now().toString(),
-      type: values.type,
-      amount: values.amount,
-      category: values.category,
-      note: values.note || "",
-      date: values.date.format("YYYY-MM-DD HH:mm"),
-    };
+  const onFinish: FormProps<TransactionFieldType>["onFinish"] = async (
+    values
+  ) => {
+    setSubmitting(true);
+    try {
+      // Find category by name to get categoryId
+      const categories =
+        values.type === "income" ? incomeCategories : expenseCategories;
+      const category = categories.find((c) => c.name === values.category);
 
-    if (editingTransaction) {
-      setTransactions((prev) =>
-        prev.map((t) => (t.id === editingTransaction.id ? transaction : t))
-      );
-      message.success("Đã cập nhật giao dịch");
-    } else {
-      setTransactions((prev) => [transaction, ...prev]);
-      message.success("Đã thêm giao dịch mới");
+      if (!category) {
+        message.error("Danh mục không hợp lệ");
+        setSubmitting(false);
+        return;
+      }
+
+      const transactionData = {
+        type: values.type,
+        amount: values.amount,
+        categoryId: category.id,
+        note: values.note,
+        transactionDate: values.date.format("YYYY-MM-DD"),
+      };
+
+      if (editingTransaction) {
+        const response = await transactionService.updateTransaction(
+          editingTransaction.id,
+          transactionData
+        );
+        if (response.success) {
+          message.success("Đã cập nhật giao dịch");
+        } else {
+          message.error(response.error || "Không thể cập nhật giao dịch");
+          setSubmitting(false);
+          return;
+        }
+      } else {
+        const response = await transactionService.createTransaction(
+          transactionData
+        );
+        if (response.success) {
+          message.success("Đã thêm giao dịch mới");
+        } else {
+          message.error(response.error || "Không thể thêm giao dịch");
+          setSubmitting(false);
+          return;
+        }
+      }
+
+      setIsModalOpen(false);
+      form.resetFields();
+      loadTransactions();
+      loadStats();
+    } catch {
+      message.error("Có lỗi xảy ra");
+    } finally {
+      setSubmitting(false);
     }
-
-    setIsModalOpen(false);
-    form.resetFields();
   };
 
   const onFinishFailed: FormProps<TransactionFieldType>["onFinishFailed"] = (
@@ -289,10 +313,11 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
 
   // Sorted transactions
   const sortedTransactions = useMemo(() => {
-    return [...filteredTransactions].sort(
-      (a, b) => dayjs(b.date).valueOf() - dayjs(a.date).valueOf()
+    return [...transactions].sort(
+      (a, b) =>
+        dayjs(b.transactionDate).valueOf() - dayjs(a.transactionDate).valueOf()
     );
-  }, [filteredTransactions]);
+  }, [transactions]);
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -340,7 +365,7 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
               <div>
                 <p className="text-xs text-gray-500">Thu nhập</p>
                 <p className="text-sm font-semibold text-green-600">
-                  +{formatNumber(stats.income)}
+                  +{formatNumber(stats.totalIncome)}
                 </p>
               </div>
             </div>
@@ -351,7 +376,7 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
               <div>
                 <p className="text-xs text-gray-500">Chi tiêu</p>
                 <p className="text-sm font-semibold text-red-600">
-                  -{formatNumber(stats.expense)}
+                  -{formatNumber(stats.totalExpense)}
                 </p>
               </div>
             </div>
@@ -471,7 +496,11 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
             <span className="text-xs text-gray-400">{dateRangeLabel}</span>
           </div>
 
-          {sortedTransactions.length > 0 ? (
+          {loading ? (
+            <div className="rounded-xl bg-white p-8 shadow-sm flex justify-center">
+              <Spin />
+            </div>
+          ) : sortedTransactions.length > 0 ? (
             <div className="space-y-2">
               {sortedTransactions.map((t) => (
                 <div key={t.id} className="rounded-xl bg-white p-3 shadow-sm">
@@ -490,7 +519,7 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
                         )}
                       </div>
                       <span className="text-sm font-medium text-gray-800">
-                        {t.category}
+                        {t.categoryName}
                       </span>
                       <Tag
                         color={t.type === "income" ? "green" : "red"}
@@ -513,8 +542,7 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
                   <div className="mt-2 flex items-center justify-between border-t border-gray-50 pt-2">
                     <div className="min-w-0 flex-1">
                       <p className="text-xs text-gray-500">
-                        {dayjs(t.date).format("DD/MM/YYYY")} lúc{" "}
-                        {dayjs(t.date).format("HH:mm")}
+                        {dayjs(t.transactionDate).format("DD/MM/YYYY")}
                       </p>
                       <p className="truncate text-xs text-gray-400">
                         {t.note || "Không có ghi chú"}
@@ -640,48 +668,48 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
           >
             <Select
               size="large"
-              placeholder="Chọn danh mục"
+              placeholder="Tìm hoặc chọn danh mục"
               loading={loadingCategories}
+              showSearch
+              filterOption={(input, option) =>
+                (option?.label ?? "")
+                  .toLowerCase()
+                  .includes(input.toLowerCase())
+              }
+              onSearch={setNewCategoryName}
               options={(transactionType === "income"
                 ? incomeCategories
                 : expenseCategories
               ).map((cat) => ({ label: cat.name, value: cat.name }))}
-              popupRender={(menu) => (
-                <>
-                  {menu}
-                  <Divider style={{ margin: "8px 0" }} />
-                  <Space style={{ padding: "0 8px 8px" }}>
-                    <Input
-                      placeholder="Thêm danh mục mới"
-                      value={newCategoryName}
-                      onChange={(e) => setNewCategoryName(e.target.value)}
-                      onKeyDown={(e) => e.stopPropagation()}
-                      style={{ width: 180 }}
-                    />
-                    <Button
-                      type="primary"
-                      icon={<PlusOutlined />}
-                      onClick={handleAddCategory}
-                    >
-                      Thêm
-                    </Button>
-                  </Space>
-                </>
-              )}
+              notFoundContent={
+                newCategoryName.trim() ? (
+                  <Button
+                    type="link"
+                    icon={<PlusOutlined />}
+                    onClick={handleAddCategory}
+                    className="w-full text-left"
+                  >
+                    Thêm "{newCategoryName.trim()}"
+                  </Button>
+                ) : (
+                  <span className="text-gray-400">
+                    Nhập để tìm hoặc tạo mới
+                  </span>
+                )
+              }
             />
           </Form.Item>
 
           <Form.Item<TransactionFieldType>
             name="date"
-            label="Ngày giờ"
-            rules={[{ required: true, message: "Vui lòng chọn ngày giờ" }]}
+            label="Ngày"
+            rules={[{ required: true, message: "Vui lòng chọn ngày" }]}
           >
             <DatePicker
               className="w-full"
               size="large"
-              format="DD/MM/YYYY HH:mm"
-              showTime={{ format: "HH:mm" }}
-              placeholder="Chọn ngày và giờ"
+              format="DD/MM/YYYY"
+              placeholder="Chọn ngày"
             />
           </Form.Item>
 
@@ -699,7 +727,12 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
               <Button block onClick={() => setIsModalOpen(false)}>
                 Hủy
               </Button>
-              <Button type="primary" htmlType="submit" block>
+              <Button
+                type="primary"
+                htmlType="submit"
+                block
+                loading={submitting}
+              >
                 {editingTransaction ? "Cập nhật" : "Thêm"}
               </Button>
             </div>
