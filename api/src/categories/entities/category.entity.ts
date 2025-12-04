@@ -8,6 +8,7 @@ import {
   OneToMany,
   JoinColumn,
   Unique,
+  Index,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Transaction } from '../../transactions/entities/transaction.entity';
@@ -17,6 +18,8 @@ export { CategoryType };
 
 @Entity('categories')
 @Unique(['user', 'name', 'type'])
+@Index('idx_categories_user_type', ['userId', 'type'])
+@Index('idx_categories_user_sort', ['userId', 'sortOrder'])
 export class Category {
   @PrimaryGeneratedColumn({ type: 'bigint', unsigned: true })
   id: number;

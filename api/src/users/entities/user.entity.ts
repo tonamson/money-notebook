@@ -5,11 +5,14 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
+  Index,
 } from 'typeorm';
 import { Category } from '../../categories/entities/category.entity';
 import { Transaction } from '../../transactions/entities/transaction.entity';
 
 @Entity('users')
+@Index('idx_users_code', ['code'])
+@Index('idx_users_last_login', ['lastLoginAt'])
 export class User {
   @PrimaryGeneratedColumn({ type: 'bigint', unsigned: true })
   id: number;

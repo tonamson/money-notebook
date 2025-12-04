@@ -6,12 +6,17 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Category } from '../../categories/entities/category.entity';
 import { CategoryType } from '../../common/enums/category-type.enum';
 
 @Entity('transactions')
+@Index('idx_transactions_user_date', ['userId', 'transactionDate'])
+@Index('idx_transactions_user_type_date', ['userId', 'type', 'transactionDate'])
+@Index('idx_transactions_user_category', ['userId', 'categoryId'])
+@Index('idx_transactions_date', ['transactionDate'])
 export class Transaction {
   @PrimaryGeneratedColumn({ type: 'bigint', unsigned: true })
   id: number;
