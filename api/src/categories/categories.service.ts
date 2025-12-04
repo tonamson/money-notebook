@@ -2,23 +2,55 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  Inject,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
 import { Category, CategoryType } from './entities/category.entity';
 import { CreateCategoryDto, UpdateCategoryDto } from './dto/category.dto';
+
+const CACHE_TTL = 0; // 0 = never expire (permanent cache)
+const CACHE_KEY_PREFIX = 'categories:user:';
 
 @Injectable()
 export class CategoriesService {
   constructor(
     @InjectRepository(Category)
     private readonly categoryRepository: Repository<Category>,
+    @Inject(CACHE_MANAGER)
+    private readonly cacheManager: Cache,
   ) {}
+
+  private getCacheKey(userId: number, type?: CategoryType): string {
+    return type
+      ? `${CACHE_KEY_PREFIX}${userId}:${type}`
+      : `${CACHE_KEY_PREFIX}${userId}:all`;
+  }
+
+  private async invalidateUserCache(userId: number): Promise<void> {
+    // Invalidate all category caches for this user
+    const keys = [
+      this.getCacheKey(userId),
+      this.getCacheKey(userId, CategoryType.INCOME),
+      this.getCacheKey(userId, CategoryType.EXPENSE),
+    ];
+    await Promise.all(keys.map((key) => this.cacheManager.del(key)));
+  }
 
   async findAllByUser(
     userId: number,
     type?: CategoryType,
   ): Promise<Category[]> {
+    const cacheKey = this.getCacheKey(userId, type);
+
+    // Try to get from cache first
+    const cached = await this.cacheManager.get<Category[]>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    // Query from DB
     const query = this.categoryRepository
       .createQueryBuilder('category')
       .where('category.userId = :userId', { userId })
@@ -29,7 +61,12 @@ export class CategoriesService {
       query.andWhere('category.type = :type', { type });
     }
 
-    return query.getMany();
+    const categories = await query.getMany();
+
+    // Cache the result permanently
+    await this.cacheManager.set(cacheKey, categories, CACHE_TTL);
+
+    return categories;
   }
 
   async findOne(id: number, userId: number): Promise<Category> {
@@ -66,7 +103,12 @@ export class CategoriesService {
       userId,
     });
 
-    return this.categoryRepository.save(category);
+    const saved = await this.categoryRepository.save(category);
+
+    // Invalidate cache
+    await this.invalidateUserCache(userId);
+
+    return saved;
   }
 
   async update(
@@ -92,7 +134,12 @@ export class CategoriesService {
     }
 
     Object.assign(category, updateDto);
-    return this.categoryRepository.save(category);
+    const saved = await this.categoryRepository.save(category);
+
+    // Invalidate cache
+    await this.invalidateUserCache(userId);
+
+    return saved;
   }
 
   async remove(id: number, userId: number): Promise<void> {
@@ -114,6 +161,9 @@ export class CategoriesService {
     }
 
     await this.categoryRepository.remove(category);
+
+    // Invalidate cache
+    await this.invalidateUserCache(userId);
   }
 
   async checkExists(
