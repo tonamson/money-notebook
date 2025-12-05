@@ -12,6 +12,7 @@ ssl/
 ## Cách đặt SSL Certificate
 
 Nginx sẽ tự động đọc 2 file trong folder này:
+
 - `fullchain.pem` - Certificate chain
 - `privkey.pem` - Private key
 
@@ -50,6 +51,7 @@ docker compose up -d nginx
 ```
 
 **Gia hạn Let's Encrypt (mỗi 90 ngày):**
+
 ```bash
 sudo certbot renew --pre-hook "docker compose stop nginx" --post-hook "docker compose start nginx"
 ```
@@ -57,6 +59,7 @@ sudo certbot renew --pre-hook "docker compose stop nginx" --post-hook "docker co
 ### Option 3: Certificate từ provider khác
 
 Copy 2 file vào folder `ssl/`:
+
 - Certificate chain → `fullchain.pem`
 - Private key → `privkey.pem`
 

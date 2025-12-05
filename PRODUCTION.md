@@ -90,6 +90,7 @@ MYSQL_PASSWORD=your_strong_password
 ### 4. Cài SSL Certificate
 
 Đặt 2 file vào folder `ssl/`:
+
 - `ssl/fullchain.pem` - Certificate
 - `ssl/privkey.pem` - Private Key
 
@@ -362,13 +363,13 @@ curl -I https://api.moneynote.store/health
 
 ## 📝 Tóm tắt ports
 
-| Service | Port | Mô tả |
-|---------|------|-------|
-| Nginx | 80 | HTTP (redirect to HTTPS) |
-| Nginx | 443 | HTTPS |
-| MySQL | 3306 | Database |
-| Redis | 6379 | Cache |
-| API | 2053 | NestJS (PM2) |
+| Service | Port | Mô tả                    |
+| ------- | ---- | ------------------------ |
+| Nginx   | 80   | HTTP (redirect to HTTPS) |
+| Nginx   | 443  | HTTPS                    |
+| MySQL   | 3306 | Database                 |
+| Redis   | 6379 | Cache                    |
+| API     | 2053 | NestJS (PM2)             |
 
 ---
 
