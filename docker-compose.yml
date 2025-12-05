@@ -1,9 +1,17 @@
+# =============================================================================
+# Money Notebook - Docker Compose
+# =============================================================================
+# MySQL, Redis, Nginx (reverse proxy)
+# API: chạy PM2 trên host (localhost:2053)
+# Frontend: static files từ frontend/out
+# Domain: moneynote.store
+# =============================================================================
+
 services:
   mysql:
     image: mysql:8.0
-    platform: linux/amd64
     container_name: money-notebook-mysql
-    # restart: unless-stopped
+    restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123}
       MYSQL_DATABASE: ${MYSQL_DATABASE:-money_notebook}
@@ -13,17 +21,18 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./docker/mysql/init:/docker-entrypoint-initdb.d
     command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       timeout: 20s
       retries: 10
+    networks:
+      - money-network
 
   redis:
     image: redis:7-alpine
     container_name: money-notebook-redis
-    # restart: unless-stopped
+    restart: unless-stopped
     ports:
       - "6379:6379"
     volumes:
@@ -34,33 +43,39 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - money-network
 
-  # Optional: phpMyAdmin for database management
-  phpmyadmin:
-    image: phpmyadmin:latest
-    container_name: money-notebook-phpmyadmin
-    # restart: unless-stopped
-    environment:
-      PMA_HOST: mysql
-      PMA_PORT: 3306
-      UPLOAD_LIMIT: 50M
+  nginx:
+    image: nginx:alpine
+    container_name: money-notebook-nginx
+    restart: unless-stopped
     ports:
-      - "8080:80"
+      - "80:80"
+      - "443:443"
+    volumes:
+      # Nginx config
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d:ro
+      # Frontend static files (build output)
+      - ./frontend/out:/var/www/frontend:ro
+      # SSL certificates (đặt fullchain.pem và privkey.pem vào đây)
+      - ./ssl:/etc/nginx/ssl:ro
     depends_on:
       - mysql
-
-  # Optional: Redis Commander for Redis management
-  redis-commander:
-    image: rediscommander/redis-commander:latest
-    container_name: money-notebook-redis-commander
-    # restart: unless-stopped
-    environment:
-      REDIS_HOSTS: local:redis:6379
-    ports:
-      - "8081:8081"
-    depends_on:
       - redis
+    networks:
+      - money-network
+    # Cho phép nginx gọi API trên host (localhost:2053)
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    # Chạy khi cần renew, không chạy liên tục
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
 
 volumes:
   mysql_data:
   redis_data:
+
+networks:
+  money-network:
+    driver: bridge
