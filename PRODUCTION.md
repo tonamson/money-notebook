@@ -1,161 +1,112 @@
 # Money Notebook - Production Deployment Guide
 
-## 📋 Mục lục
-
-1. [Yêu cầu hệ thống](#yêu-cầu-hệ-thống)
-2. [Cấu trúc deployment](#cấu-trúc-deployment)
-3. [Cài đặt ban đầu](#cài-đặt-ban-đầu)
-4. [Cài đặt SSL Certificate](#cài-đặt-ssl-certificate)
-5. [Chạy Production](#chạy-production)
-6. [Gia hạn SSL Certificate](#gia-hạn-ssl-certificate)
-7. [Bảo trì & Troubleshooting](#bảo-trì--troubleshooting)
-
----
-
-## Yêu cầu hệ thống
-
-- **Server**: Ubuntu 20.04+ / Debian 11+ / CentOS 8+
-- **RAM**: Tối thiểu 2GB
-- **CPU**: 2 cores+
-- **Docker**: 20.10+
-- **Docker Compose**: v2.0+
-- **Domain**: 2 domain/subdomain đã trỏ về server
-  - Frontend: `yourdomain.com` (domain chính)
-  - API: `api.yourdomain.com` (subdomain)
-
----
-
-## Cấu trúc deployment
+## 📋 Tổng quan
 
 ```
-Server
-├── Frontend (Next.js SSR) ──► Nginx (Port 443/SSL)
-├── API (NestJS + PM2)     ──► Nginx Reverse Proxy
-├── MySQL 8.0              ──► Internal Network
-└── Redis 7                ──► Internal Network
+┌─────────────────────────────────────────────────────────────────┐
+│                         SERVER                                   │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│   Docker Compose                                                 │
+│   ├── MySQL 8.0         ──► Port 3306                           │
+│   ├── Redis 7           ──► Port 6379                           │
+│   └── Nginx             ──► Port 80, 443                        │
+│           │                                                      │
+│           ├── moneynote.store      ──► frontend/out (static)    │
+│           └── api.moneynote.store  ──► localhost:2053 (proxy)   │
+│                                                                  │
+│   PM2 (trên host)                                                │
+│   └── API (NestJS)      ──► Port 2053                           │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-**Các file chính:**
+## 📁 Cấu trúc project
 
 ```
 money-notebook/
-├── Dockerfile              ← Build image production
-├── docker-compose.ssl.yml  ← Chạy production với SSL
-├── .env                    ← Biến môi trường
-└── scripts/
-    ├── setup-ssl.sh        ← Cài SSL lần đầu
-    └── renew-ssl.sh        ← Gia hạn SSL
+├── docker-compose.yml      # MySQL + Redis + Nginx
+├── .env                    # Environment variables
+├── api/                    # NestJS Backend
+├── frontend/
+│   └── out/                # Build output (static files)
+├── docker/
+│   └── nginx/
+│       ├── nginx.conf
+│       └── conf.d/
+│           └── moneynote.store.conf
+└── ssl/
+    ├── fullchain.pem       # SSL Certificate
+    └── privkey.pem         # SSL Private Key
 ```
 
 ---
 
-## Cài đặt ban đầu
+## 🚀 Cài đặt lần đầu
 
-### 1. Cài đặt Docker (nếu chưa có)
+### 1. Yêu cầu server
+
+- **OS**: Ubuntu 20.04+ / Debian 11+
+- **RAM**: 2GB+
+- **Docker**: 20.10+
+- **Node.js**: 22.x
+- **PM2**: Cài global
 
 ```bash
-# Ubuntu/Debian
-curl -fsSL https://get.docker.com -o get-docker.sh
-sudo sh get-docker.sh
+# Cài Docker
+curl -fsSL https://get.docker.com | sh
 sudo usermod -aG docker $USER
 
-# Logout và login lại để apply group
+# Cài Node.js 22
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+sudo apt install -y nodejs
+
+# Cài PM2
+sudo npm install -g pm2
 ```
 
-### 2. Clone repository
+### 2. Clone project
 
 ```bash
+cd /home
 git clone https://github.com/tonamson/money-notebook.git
 cd money-notebook
 ```
 
-### 3. Cấu hình environment
-
-#### 3.1. File `.env` (Docker Compose - thư mục gốc)
+### 3. Tạo file .env
 
 ```bash
-# Vào thư mục gốc project
-cd /path/to/money-notebook
-
-# Copy file mẫu (file .env sẽ ở thư mục gốc, cùng cấp với docker-compose.ssl.yml)
-cp .env.ssl.example .env
-
-# Chỉnh sửa file .env
 nano .env
 ```
 
-**Cập nhật các giá trị sau:**
-
 ```env
-# Domain của bạn
-FRONTEND_DOMAIN=yourdomain.com
-API_DOMAIN=api.yourdomain.com
-SSL_EMAIL=your-email@example.com
-
-# Database - đổi password mạnh
-MYSQL_ROOT_PASSWORD=MyStr0ng!RootP@ss2024
-MYSQL_PASSWORD=MyStr0ng!UserP@ss2024
-
-# JWT - generate key mới
-JWT_SECRET=<chạy: openssl rand -base64 64>
+# Database
+MYSQL_ROOT_PASSWORD=your_strong_root_password
+MYSQL_DATABASE=money_notebook
+MYSQL_USER=money_user
+MYSQL_PASSWORD=your_strong_password
 ```
 
-#### 3.2. Giải thích cách Docker sử dụng Environment
+### 4. Cài SSL Certificate
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                        PRODUCTION DOCKER                                     │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│   money-notebook/                                                            │
-│   ├── .env  ◄──────────── Docker Compose đọc file này                       │
-│   │                       (truyền biến vào containers)                       │
-│   │                                                                          │
-│   ├── api/                                                                   │
-│   │   └── .env  ✗        KHÔNG CẦN tạo, Docker đã truyền biến               │
-│   │                                                                          │
-│   └── frontend/                                                              │
-│       └── .env.local ✗   KHÔNG CẦN tạo, biến được truyền lúc build          │
-│                                                                              │
-└─────────────────────────────────────────────────────────────────────────────┘
+Đặt 2 file vào folder `ssl/`:
+- `ssl/fullchain.pem` - Certificate
+- `ssl/privkey.pem` - Private Key
 
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                        DEVELOPMENT LOCAL                                     │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│   money-notebook/                                                            │
-│   ├── .env               Không cần (chỉ dùng cho Docker)                    │
-│   │                                                                          │
-│   ├── api/                                                                   │
-│   │   └── .env  ◄─────── CẦN TẠO để chạy: yarn start:dev                    │
-│   │                                                                          │
-│   └── frontend/                                                              │
-│       └── .env.local ◄── CẦN TẠO để chạy: yarn dev                          │
-│                                                                              │
-└─────────────────────────────────────────────────────────────────────────────┘
+**Xem hướng dẫn chi tiết:** [ssl/README.md](ssl/README.md)
+
+### 5. Khởi động Docker (MySQL + Redis + Nginx)
+
+```bash
+docker compose up -d
 ```
 
-**Tóm tắt:**
-
-| Môi trường            | `.env` (gốc) | `api/.env`   | `frontend/.env.local` |
-| --------------------- | ------------ | ------------ | --------------------- |
-| **Production Docker** | ✅ BẮT BUỘC  | ❌ Không cần | ❌ Không cần          |
-| **Development Local** | ❌ Không cần | ✅ BẮT BUỘC  | ✅ BẮT BUỘC           |
-
-> **Giải thích**: Khi build Docker, các biến từ file `.env` gốc được:
->
-> - Truyền vào `api` container qua `environment:` trong docker-compose
-> - Truyền vào `frontend` lúc build qua `args:` (biến `NEXT_PUBLIC_*` được "đóng gói" vào JS bundle)
-
-#### 3.3. Backend Environment (`api/.env`)
-
-> ⚠️ **Chỉ cần khi chạy development local** (yarn start:dev)
->
-> Khi chạy Docker production, các biến được truyền qua `docker-compose.ssl.yml` → `environment:`, Docker container sẽ nhận biến trực tiếp, KHÔNG đọc file `api/.env`.
+### 6. Build và chạy API
 
 ```bash
 cd api
-cp .env.example .env
+
+# Tạo file .env
 nano .env
 ```
 
@@ -165,330 +116,264 @@ MYSQL_HOST=localhost
 MYSQL_PORT=3306
 MYSQL_DATABASE=money_notebook
 MYSQL_USER=money_user
-MYSQL_PASSWORD=money_pass
+MYSQL_PASSWORD=your_strong_password
 
 # Redis
 REDIS_HOST=localhost
 REDIS_PORT=6379
 
 # JWT
-JWT_SECRET=your-jwt-secret-key
+JWT_SECRET=your_jwt_secret_key_min_32_chars
 JWT_EXPIRES_IN=7d
 
 # App
 PORT=2053
-NODE_ENV=development
+NODE_ENV=production
 ```
 
-#### 3.4. Frontend Environment (`frontend/.env.local`)
+```bash
+# Install và build
+npm install
+npm run build
 
-> ⚠️ **Chỉ cần khi chạy development local** (yarn dev)
->
-> Khi build Docker production, `NEXT_PUBLIC_API_URL` được truyền qua `args:` trong docker-compose. Biến này được "đóng gói" vào JS bundle lúc build, nên KHÔNG cần file `.env.local` trong container.
+# Chạy với PM2
+pm2 start dist/main.js --name money-api
+pm2 save
+pm2 startup
+```
+
+### 7. Build Frontend
 
 ```bash
 cd frontend
+
+# Tạo file .env.local
 nano .env.local
 ```
 
 ```env
-# API URL - thay đổi theo môi trường
-NEXT_PUBLIC_API_URL=http://localhost:2053
+NEXT_PUBLIC_API_URL=https://api.moneynote.store
 ```
-
-**Giá trị theo môi trường:**
-
-| Môi trường  | NEXT_PUBLIC_API_URL          |
-| ----------- | ---------------------------- |
-| Development | `http://localhost:2053`      |
-| Production  | `https://api.yourdomain.com` |
-
-#### 3.5. Tổng hợp biến môi trường
-
-| Biến                  | Mô tả                             | Ví dụ                     |
-| --------------------- | --------------------------------- | ------------------------- |
-| `FRONTEND_DOMAIN`     | Domain chính cho frontend         | `yourdomain.com`          |
-| `API_DOMAIN`          | Subdomain cho API                 | `api.yourdomain.com`      |
-| `SSL_EMAIL`           | Email đăng ký Let's Encrypt       | `admin@yourdomain.com`    |
-| `MYSQL_ROOT_PASSWORD` | Password root MySQL               | `MyStr0ng!Pass`           |
-| `MYSQL_USER`          | Username MySQL                    | `money_user`              |
-| `MYSQL_PASSWORD`      | Password MySQL user               | `MyStr0ng!Pass`           |
-| `MYSQL_DATABASE`      | Tên database                      | `money_notebook`          |
-| `JWT_SECRET`          | Secret key cho JWT (min 32 chars) | `openssl rand -base64 64` |
-| `JWT_EXPIRES_IN`      | Thời gian hết hạn token           | `7d`                      |
-
-### 4. Cấp quyền cho scripts
 
 ```bash
-chmod +x scripts/*.sh
+# Install và build
+npm install
+npm run build
 ```
+
+Output sẽ nằm trong `frontend/out/` - Nginx đã được config để serve folder này.
 
 ---
 
-## Cài đặt SSL Certificate
+## 🔧 Các lệnh thường dùng
 
-### Lần đầu tiên (Lấy certificate mới)
-
-```bash
-# Chạy script setup SSL
-./scripts/setup-ssl.sh
-```
-
-Script sẽ tự động:
-
-1. Khởi động nginx tạm thời
-2. Lấy certificate từ Let's Encrypt cho cả 2 domain
-3. Lưu certificate vào `./ssl/`
-
-### Kiểm tra certificate
+### Docker
 
 ```bash
-# Xem thông tin certificate
-openssl x509 -in ./ssl/live/yourdomain.com/fullchain.pem -text -noout | grep -A2 "Validity"
-```
-
----
-
-## Chạy Production
-
-### Build và khởi động
-
-```bash
-# Build image
-docker compose -f docker-compose.ssl.yml build
-
-# Khởi động services
-docker compose -f docker-compose.ssl.yml up -d
+# Xem status
+docker compose ps
 
 # Xem logs
-docker compose -f docker-compose.ssl.yml logs -f app
+docker compose logs -f nginx
+docker compose logs -f mysql
+
+# Restart
+docker compose restart nginx
+
+# Stop tất cả
+docker compose down
+
+# Start lại
+docker compose up -d
 ```
 
-### Kiểm tra services
+### PM2 (API)
 
 ```bash
-# Trạng thái containers
-docker compose -f docker-compose.ssl.yml ps
+# Xem status
+pm2 list
 
-# Health check
-curl -k https://yourdomain.com/health
-curl -k https://api.yourdomain.com/health
+# Xem logs
+pm2 logs money-api
 
-# PM2 status (trong container)
-docker exec money-notebook-app pm2 list
+# Restart
+pm2 restart money-api
+
+# Reload (zero downtime)
+pm2 reload money-api
 ```
 
-### Các lệnh hữu ích
+### Nginx
 
 ```bash
-# Restart app
-docker compose -f docker-compose.ssl.yml restart app
+# Test config
+docker exec money-notebook-nginx nginx -t
 
-# Xem logs realtime
-docker compose -f docker-compose.ssl.yml logs -f app
+# Reload config
+docker exec money-notebook-nginx nginx -s reload
 
-# Vào shell container
-docker exec -it money-notebook-app sh
-
-# Xem PM2 logs
-docker exec money-notebook-app pm2 logs
-
-# Reload nginx (sau khi thay đổi config)
-docker exec money-notebook-app nginx -s reload
+# Xem logs
+docker exec money-notebook-nginx tail -f /var/log/nginx/error.log
 ```
 
 ---
 
-## Gia hạn SSL Certificate
+## 🔄 Cập nhật code
 
-### Gia hạn thủ công
+### Cập nhật API
 
 ```bash
-./scripts/renew-ssl.sh
+cd /home/money-notebook
+git pull
+
+cd api
+npm install
+npm run build
+pm2 reload money-api
 ```
 
-### Cài đặt tự động gia hạn (Cron job)
-
-Let's Encrypt certificate có thời hạn 90 ngày. Nên setup cron để tự động gia hạn.
+### Cập nhật Frontend
 
 ```bash
-# Mở crontab
-crontab -e
+cd /home/money-notebook
+git pull
 
-# Thêm dòng sau (chạy mỗi ngày lúc 3:00 AM)
-0 3 * * * cd /path/to/money-notebook && ./scripts/renew-ssl.sh >> /var/log/ssl-renew.log 2>&1
-```
-
-### Kiểm tra ngày hết hạn
-
-```bash
-# Xem ngày hết hạn của certificate
-echo | openssl s_client -servername yourdomain.com -connect yourdomain.com:443 2>/dev/null | openssl x509 -noout -dates
-```
-
----
-
-## Thay thế SSL Certificate thủ công
-
-Nếu bạn dùng certificate từ provider khác (không phải Let's Encrypt):
-
-### 1. Chuẩn bị certificate files
-
-Bạn cần 2 files cho mỗi domain:
-
-- `fullchain.pem` - Certificate + Intermediate CA
-- `privkey.pem` - Private key
-
-### 2. Copy certificate vào đúng vị trí
-
-```bash
-# Frontend domain (domain chính)
-mkdir -p ./ssl/live/yourdomain.com
-cp /path/to/your/fullchain.pem ./ssl/live/yourdomain.com/
-cp /path/to/your/privkey.pem ./ssl/live/yourdomain.com/
-
-# API domain (subdomain)
-mkdir -p ./ssl/live/api.yourdomain.com
-cp /path/to/your/api-fullchain.pem ./ssl/live/api.yourdomain.com/fullchain.pem
-cp /path/to/your/api-privkey.pem ./ssl/live/api.yourdomain.com/privkey.pem
-```
-
-### 3. Phân quyền
-
-```bash
-chmod 644 ./ssl/live/*/fullchain.pem
-chmod 600 ./ssl/live/*/privkey.pem
-```
-
-### 4. Reload nginx
-
-```bash
-docker exec money-notebook-app nginx -s reload
-```
-
-### 5. Verify
-
-```bash
-curl -I https://yourdomain.com
-curl -I https://api.yourdomain.com
+cd frontend
+npm install
+npm run build
+# Nginx tự động serve folder out/ mới
 ```
 
 ---
 
-## Bảo trì & Troubleshooting
-
-### Xem logs
-
-```bash
-# Tất cả logs
-docker compose -f docker-compose.ssl.yml logs
-
-# Chỉ app logs
-docker compose -f docker-compose.ssl.yml logs app
-
-# Chỉ MySQL logs
-docker compose -f docker-compose.ssl.yml logs mysql
-
-# Nginx access log
-docker exec money-notebook-app tail -f /var/log/nginx/access.log
-
-# Nginx error log
-docker exec money-notebook-app tail -f /var/log/nginx/error.log
-
-# PM2 logs
-docker exec money-notebook-app pm2 logs
-```
-
-### Restart services
-
-```bash
-# Restart tất cả
-docker compose -f docker-compose.ssl.yml restart
-
-# Restart chỉ app
-docker compose -f docker-compose.ssl.yml restart app
-
-# Reload nginx (không downtime)
-docker exec money-notebook-app nginx -s reload
-
-# Reload PM2 (không downtime)
-docker exec money-notebook-app pm2 reload all
-```
-
-### Backup database
+## 💾 Backup Database
 
 ```bash
 # Backup
 docker exec money-notebook-mysql mysqldump -u root -p'YOUR_ROOT_PASSWORD' money_notebook > backup_$(date +%Y%m%d).sql
 
 # Restore
-docker exec -i money-notebook-mysql mysql -u root -p'YOUR_ROOT_PASSWORD' money_notebook < backup_20241201.sql
+docker exec -i money-notebook-mysql mysql -u root -p'YOUR_ROOT_PASSWORD' money_notebook < backup.sql
 ```
 
-### Common issues
+---
 
-#### 1. Certificate không tìm thấy
+## 🔒 SSL Certificate
+
+### Cloudflare Origin Certificate (Khuyến nghị)
+
+1. Cloudflare → SSL/TLS → Origin Server → Create Certificate
+2. Lưu vào `ssl/fullchain.pem` và `ssl/privkey.pem`
+3. Cloudflare SSL mode: **Full (strict)**
+
+### Let's Encrypt
 
 ```bash
-# Kiểm tra certificate tồn tại
-ls -la ./ssl/live/
+# Cài certbot
+sudo apt install certbot
 
-# Kiểm tra mount volume
-docker inspect money-notebook-app | grep -A20 "Mounts"
+# Tạm dừng nginx
+docker compose stop nginx
+
+# Lấy certificate
+sudo certbot certonly --standalone -d moneynote.store -d www.moneynote.store -d api.moneynote.store
+
+# Copy vào project
+sudo cp /etc/letsencrypt/live/moneynote.store/fullchain.pem ./ssl/
+sudo cp /etc/letsencrypt/live/moneynote.store/privkey.pem ./ssl/
+sudo chown $USER:$USER ./ssl/*.pem
+
+# Khởi động nginx
+docker compose up -d nginx
 ```
 
-#### 2. Nginx không start
+### Reload SSL
 
 ```bash
-# Test nginx config
-docker exec money-notebook-app nginx -t
+docker compose restart nginx
+```
+
+---
+
+## 🐛 Troubleshooting
+
+### Nginx không start
+
+```bash
+# Kiểm tra config
+docker exec money-notebook-nginx nginx -t
 
 # Xem error log
-docker exec money-notebook-app cat /var/log/nginx/error.log
+docker compose logs nginx
 ```
 
-#### 3. API không kết nối được database
+### API không connect được database
 
 ```bash
-# Kiểm tra MySQL health
+# Kiểm tra MySQL đang chạy
+docker compose ps mysql
+
+# Kiểm tra connection
 docker exec money-notebook-mysql mysqladmin ping -h localhost
-
-# Kiểm tra network
-docker network inspect money-notebook_money-network
 ```
 
-#### 4. PM2 cluster không hoạt động
+### SSL không hoạt động
 
 ```bash
-# Xem PM2 status
-docker exec money-notebook-app pm2 list
+# Kiểm tra file SSL tồn tại
+ls -la ssl/
 
-# Restart PM2
-docker exec money-notebook-app pm2 restart all
+# Kiểm tra certificate
+openssl x509 -in ssl/fullchain.pem -text -noout | head -20
+```
 
-# Xem chi tiết
-docker exec money-notebook-app pm2 describe money-notebook-api
+### Frontend không hiển thị
+
+```bash
+# Kiểm tra folder out tồn tại
+ls -la frontend/out/
+
+# Rebuild frontend
+cd frontend && npm run build
 ```
 
 ---
 
-## Cập nhật ứng dụng
+## 📊 Monitoring
+
+### Xem resource usage
 
 ```bash
-# Pull code mới
-git pull origin main
+# Docker containers
+docker stats
 
-# Rebuild và restart
-docker compose -f docker-compose.ssl.yml build app
-docker compose -f docker-compose.ssl.yml up -d app
+# PM2
+pm2 monit
+```
 
-# Verify
-docker compose -f docker-compose.ssl.yml logs -f app
+### Health check
+
+```bash
+curl -I https://moneynote.store/health
+curl -I https://api.moneynote.store/health
 ```
 
 ---
 
-## Liên hệ hỗ trợ
+## 📝 Tóm tắt ports
 
-- **Repository**: https://github.com/tonamson/money-notebook
-- **Issues**: https://github.com/tonamson/money-notebook/issues
+| Service | Port | Mô tả |
+|---------|------|-------|
+| Nginx | 80 | HTTP (redirect to HTTPS) |
+| Nginx | 443 | HTTPS |
+| MySQL | 3306 | Database |
+| Redis | 6379 | Cache |
+| API | 2053 | NestJS (PM2) |
+
+---
+
+## 🔗 Links
+
+- **Frontend**: https://moneynote.store
+- **API**: https://api.moneynote.store
+- **API Docs**: https://api.moneynote.store/docs
