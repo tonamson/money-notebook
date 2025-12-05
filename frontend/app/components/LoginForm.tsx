@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Input, Button, message } from "antd";
+import { Input, Button, App } from "antd";
 import { WalletOutlined, KeyOutlined, PlusOutlined } from "@ant-design/icons";
 import { authService } from "../services/authService";
 
@@ -10,6 +10,7 @@ interface LoginFormProps {
 }
 
 export default function LoginForm({ onLogin }: LoginFormProps) {
+  const { message } = App.useApp();
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
 
