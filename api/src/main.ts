@@ -13,13 +13,13 @@ async function bootstrap() {
   console.log({ sslPath });
 
   let httpsOptions: { key: Buffer; cert: Buffer } | undefined = undefined;
-  if (isProd && fs.existsSync(path.join(sslPath, 'fullchain.pem'))) {
-    httpsOptions = {
-      key: fs.readFileSync(path.join(sslPath, 'privkey.pem')),
-      cert: fs.readFileSync(path.join(sslPath, 'fullchain.pem')),
-    };
-    console.log('🔒 SSL enabled');
-  }
+  // if (isProd && fs.existsSync(path.join(sslPath, 'fullchain.pem'))) {
+  //   httpsOptions = {
+  //     key: fs.readFileSync(path.join(sslPath, 'privkey.pem')),
+  //     cert: fs.readFileSync(path.join(sslPath, 'fullchain.pem')),
+  //   };
+  //   console.log('🔒 SSL enabled');
+  // }
 
   const app = await NestFactory.create(AppModule, { httpsOptions });
 
