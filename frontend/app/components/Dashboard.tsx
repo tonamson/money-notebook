@@ -40,6 +40,7 @@ import {
   TransactionStats,
 } from "../services/transactionService";
 import LanguageSwitcher from "./LanguageSwitcher";
+import { formatNumber, formatCompactNumber } from "../utils/format";
 
 // Form field type
 type TransactionFieldType = {
@@ -218,11 +219,6 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
     return `${start.format("DD/MM/YYYY")} - ${end.format("DD/MM/YYYY")}`;
   }, [dateRange]);
 
-  // Format số tiền theo chuẩn Mỹ (1,234.56)
-  const formatNumber = (value: number) => {
-    return new Intl.NumberFormat("en-US").format(value);
-  };
-
   const handleAddTransaction = () => {
     setEditingTransaction(null);
     setTransactionType("expense");
@@ -347,6 +343,24 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
     return totals;
   }, [transactions]);
 
+  // Calculate monthly totals for Year view calendar
+  const monthlyTotals = useMemo(() => {
+    const totals: Record<string, { income: number; expense: number }> = {};
+    transactions.forEach((tx) => {
+      const monthKey = dayjs(tx.transactionDate).format("YYYY-MM");
+      if (!totals[monthKey]) {
+        totals[monthKey] = { income: 0, expense: 0 };
+      }
+      const amount = Number(tx.amount) || 0;
+      if (tx.type === "income") {
+        totals[monthKey].income += amount;
+      } else {
+        totals[monthKey].expense += amount;
+      }
+    });
+    return totals;
+  }, [transactions]);
+
   // Filter transactions by selected date
   const filteredTransactions = useMemo(() => {
     return transactions
@@ -401,12 +415,31 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
     );
   };
 
+  // Month cell render for Year view
+  const monthCellRender = (value: Dayjs) => {
+    const monthKey = value.format("YYYY-MM");
+    const monthData = monthlyTotals[monthKey];
+    const income = monthData?.income || 0;
+    const expense = monthData?.expense || 0;
+
+    return (
+      <div className="notes-month">
+        <span className="month-income">{formatCompactNumber(income)}</span>
+        <span className="month-separator"> / </span>
+        <span className="month-expense">{formatCompactNumber(expense)}</span>
+      </div>
+    );
+  };
+
   const cellRenderMobile: CalendarProps<Dayjs>["cellRender"] = (
     current,
     info
   ) => {
     if (info.type === "date") {
       return dateCellRenderMobile(current);
+    }
+    if (info.type === "month") {
+      return monthCellRender(current);
     }
     return info.originNode;
   };
@@ -417,6 +450,9 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
   ) => {
     if (info.type === "date") {
       return dateCellRenderDesktop(current);
+    }
+    if (info.type === "month") {
+      return monthCellRender(current);
     }
     return info.originNode;
   };

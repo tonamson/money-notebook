@@ -149,3 +149,51 @@ body {
 .desktop-calendar .ant-picker-calendar-date-content::-webkit-scrollbar-track {
   background-color: transparent;
 }
+
+/* Year view: Monthly totals */
+.notes-month {
+  font-size: 12px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.notes-month .month-income {
+  color: #389e0d;
+  font-weight: 700;
+}
+
+.notes-month .month-separator {
+  color: #666;
+  font-weight: 600;
+}
+
+.notes-month .month-expense {
+  color: #cf1322;
+  font-weight: 700;
+}
+
+/* Selected month in Year view - high contrast colors */
+.ant-picker-cell-selected .notes-month .month-income {
+  color: #ffffff;
+  font-weight: 700;
+  background-color: #52c41a;
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+.ant-picker-cell-selected .notes-month .month-separator {
+  color: #ffffff;
+}
+
+.ant-picker-cell-selected .notes-month .month-expense {
+  color: #ffffff;
+  font-weight: 700;
+  background-color: #ff4d4f;
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+/* Mobile Year view */
+.mobile-calendar .notes-month {
+  font-size: 9px;
+}
