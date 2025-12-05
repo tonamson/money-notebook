@@ -9,10 +9,9 @@ import * as path from 'path';
 async function bootstrap() {
   // SSL configuration (production)
   const isProd = process.env.NODE_ENV === 'production';
-  const sslPath = path.join(__dirname, '..', '..', '..', 'ssl');
+  const sslPath = path.join(__dirname, '..', 'ssl');
 
   let httpsOptions: { key: Buffer; cert: Buffer } | undefined = undefined;
-  console.log({ isProd, sslPath });
   if (isProd && fs.existsSync(path.join(sslPath, 'fullchain.pem'))) {
     httpsOptions = {
       key: fs.readFileSync(path.join(sslPath, 'privkey.pem')),
