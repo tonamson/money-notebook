@@ -28,6 +28,7 @@
     "balance": "Số dư",
     "income": "Thu nhập",
     "expense": "Chi tiêu",
+    "transactions": "Giao dịch",
     "addTransaction": "Thêm giao dịch",
     "editTransaction": "Sửa giao dịch",
     "noTransactions": "Chưa có giao dịch nào",

@@ -24,3 +24,128 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Calendar Styles - Mobile First */
+
+/* ===== MOBILE CALENDAR (compact mode) ===== */
+.mobile-calendar .ant-picker-calendar-header {
+  padding: 8px !important;
+}
+
+.mobile-calendar .ant-picker-content th {
+  font-size: 12px !important;
+  padding: 8px 0 !important;
+}
+
+.mobile-calendar .ant-picker-cell {
+  padding: 2px 0 !important;
+}
+
+.mobile-calendar .ant-picker-cell-inner {
+  min-height: 50px !important;
+  height: 50px !important;
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  padding: 4px 2px !important;
+}
+
+.mobile-calendar .ant-picker-calendar-date-value {
+  font-size: 14px !important;
+  font-weight: 500 !important;
+}
+
+/* Mobile: colored dots */
+.mobile-dots {
+  display: flex;
+  gap: 3px;
+  justify-content: center;
+  margin-top: 2px;
+}
+
+.mobile-dots .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.mobile-dots .dot-income {
+  background-color: #52c41a;
+}
+
+.mobile-dots .dot-expense {
+  background-color: #ff4d4f;
+}
+
+/* Mobile: Selected date highlight */
+.mobile-calendar .ant-picker-cell-selected .ant-picker-cell-inner {
+  background-color: #1890ff !important;
+  border-radius: 8px;
+}
+
+.mobile-calendar .ant-picker-cell-selected .ant-picker-calendar-date-value {
+  color: white !important;
+}
+
+.mobile-calendar .ant-picker-cell-selected .dot-income {
+  background-color: #b7eb8f !important;
+}
+
+.mobile-calendar .ant-picker-cell-selected .dot-expense {
+  background-color: #ff1500 !important;
+}
+
+/* Mobile: Today highlight */
+.mobile-calendar .ant-picker-cell-today .ant-picker-cell-inner::before {
+  border-radius: 8px !important;
+  border-color: #1890ff !important;
+}
+
+/* ===== DESKTOP CALENDAR (fullscreen mode like Ant Design) ===== */
+.desktop-calendar .events {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.desktop-calendar .events li {
+  margin-bottom: 3px;
+}
+
+.desktop-calendar .events .ant-badge-status {
+  width: 100%;
+  overflow: hidden;
+  font-size: 12px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.desktop-calendar .events .ant-badge-status-success .ant-badge-status-text {
+  color: #52c41a;
+  font-weight: 500;
+}
+
+.desktop-calendar .events .ant-badge-status-error .ant-badge-status-text {
+  color: #ff4d4f;
+  font-weight: 500;
+}
+
+/* Desktop: Cell height for more content */
+.desktop-calendar .ant-picker-calendar-date-content {
+  height: 80px !important;
+  overflow-y: auto !important;
+}
+
+.desktop-calendar .ant-picker-calendar-date-content::-webkit-scrollbar {
+  width: 4px;
+}
+
+.desktop-calendar .ant-picker-calendar-date-content::-webkit-scrollbar-thumb {
+  background-color: #d9d9d9;
+  border-radius: 4px;
+}
+
+.desktop-calendar .ant-picker-calendar-date-content::-webkit-scrollbar-track {
+  background-color: transparent;
+}

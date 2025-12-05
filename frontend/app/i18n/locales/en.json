@@ -28,6 +28,7 @@
     "balance": "Balance",
     "income": "Income",
     "expense": "Expense",
+    "transactions": "Transactions",
     "addTransaction": "Add Transaction",
     "editTransaction": "Edit Transaction",
     "noTransactions": "No transactions yet",

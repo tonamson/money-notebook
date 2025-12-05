@@ -28,6 +28,7 @@
     "balance": "余额",
     "income": "收入",
     "expense": "支出",
+    "transactions": "交易",
     "addTransaction": "添加交易",
     "editTransaction": "编辑交易",
     "noTransactions": "暂无交易",

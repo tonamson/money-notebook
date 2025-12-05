@@ -15,8 +15,10 @@ import {
   Popconfirm,
   Spin,
   App,
+  Calendar,
+  Badge,
 } from "antd";
-import type { FormProps } from "antd";
+import type { CalendarProps, FormProps } from "antd";
 import {
   PlusOutlined,
   ArrowUpOutlined,
@@ -26,7 +28,6 @@ import {
   LogoutOutlined,
   EditOutlined,
   CopyOutlined,
-  CalendarOutlined,
   BookOutlined,
 } from "@ant-design/icons";
 import Link from "next/link";
@@ -66,6 +67,7 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
     dayjs().startOf("month"),
     dayjs().endOf("month"),
   ]);
+  const [selectedDate, setSelectedDate] = useState<Dayjs>(dayjs());
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] =
     useState<Transaction | null>(null);
@@ -152,7 +154,7 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
         setStats(response.data);
       }
     } catch {
-      console.error("Không thể tải thống kê");
+      // Silently fail
     }
   }, [dateRange]);
 
@@ -216,9 +218,9 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
     return `${start.format("DD/MM/YYYY")} - ${end.format("DD/MM/YYYY")}`;
   }, [dateRange]);
 
-  // Format số tiền đầy đủ, chỉ số không có đơn vị tiền
+  // Format số tiền theo chuẩn Mỹ (1,234.56)
   const formatNumber = (value: number) => {
-    return new Intl.NumberFormat("vi-VN").format(value);
+    return new Intl.NumberFormat("en-US").format(value);
   };
 
   const handleAddTransaction = () => {
@@ -324,16 +326,115 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
   const onFinishFailed: FormProps<TransactionFieldType>["onFinishFailed"] = (
     errorInfo
   ) => {
-    console.log("Form validation failed:", errorInfo);
+    // Form validation failed - errors shown in UI
   };
 
-  // Sorted transactions
-  const sortedTransactions = useMemo(() => {
-    return [...transactions].sort(
-      (a, b) =>
-        dayjs(b.transactionDate).valueOf() - dayjs(a.transactionDate).valueOf()
-    );
+  // Calculate daily totals for calendar display
+  const dailyTotals = useMemo(() => {
+    const totals: Record<string, { income: number; expense: number }> = {};
+    transactions.forEach((tx) => {
+      const dateKey = dayjs(tx.transactionDate).format("YYYY-MM-DD");
+      if (!totals[dateKey]) {
+        totals[dateKey] = { income: 0, expense: 0 };
+      }
+      const amount = Number(tx.amount) || 0; // Convert string to number
+      if (tx.type === "income") {
+        totals[dateKey].income += amount;
+      } else {
+        totals[dateKey].expense += amount;
+      }
+    });
+    return totals;
   }, [transactions]);
+
+  // Filter transactions by selected date
+  const filteredTransactions = useMemo(() => {
+    return transactions
+      .filter((tx) => dayjs(tx.transactionDate).isSame(selectedDate, "day"))
+      .sort(
+        (a, b) =>
+          dayjs(b.transactionDate).valueOf() -
+          dayjs(a.transactionDate).valueOf()
+      );
+  }, [transactions, selectedDate]);
+
+  // Calendar cell renderer - show all transactions for the date
+  const getTransactionsForDate = (value: Dayjs) => {
+    const dateKey = value.format("YYYY-MM-DD");
+    return transactions.filter(
+      (tx) => dayjs(tx.transactionDate).format("YYYY-MM-DD") === dateKey
+    );
+  };
+
+  // Mobile: compact view with dots
+  const dateCellRenderMobile = (value: Dayjs) => {
+    const dateKey = value.format("YYYY-MM-DD");
+    const dayData = dailyTotals[dateKey];
+    if (!dayData) return null;
+
+    return (
+      <div className="mobile-dots">
+        {dayData.income > 0 && <span className="dot dot-income"></span>}
+        {dayData.expense > 0 && <span className="dot dot-expense"></span>}
+      </div>
+    );
+  };
+
+  // Desktop: fullscreen view with transaction list (like Ant Design example)
+  const dateCellRenderDesktop = (value: Dayjs) => {
+    const dayTransactions = getTransactionsForDate(value);
+    if (dayTransactions.length === 0) return null;
+
+    return (
+      <ul className="events">
+        {dayTransactions.map((tx) => (
+          <li key={tx.id}>
+            <Badge
+              status={tx.type === "income" ? "success" : "error"}
+              text={`${tx.type === "income" ? "+" : "-"}${formatNumber(
+                Number(tx.amount)
+              )}`}
+            />
+          </li>
+        ))}
+      </ul>
+    );
+  };
+
+  const cellRenderMobile: CalendarProps<Dayjs>["cellRender"] = (
+    current,
+    info
+  ) => {
+    if (info.type === "date") {
+      return dateCellRenderMobile(current);
+    }
+    return info.originNode;
+  };
+
+  const cellRenderDesktop: CalendarProps<Dayjs>["cellRender"] = (
+    current,
+    info
+  ) => {
+    if (info.type === "date") {
+      return dateCellRenderDesktop(current);
+    }
+    return info.originNode;
+  };
+
+  // Handle calendar date select
+  const onCalendarSelect = (date: Dayjs) => {
+    setSelectedDate(date);
+
+    // Update date range to show the month of selected date
+    if (!date.isSame(dateRange[0], "month")) {
+      setDateRange([date.startOf("month"), date.endOf("month")]);
+    }
+  };
+
+  // Handle calendar panel change (month/year navigation)
+  const onPanelChange = (date: Dayjs) => {
+    setDateRange([date.startOf("month"), date.endOf("month")]);
+  };
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -371,9 +472,11 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
       <div className="px-4 pb-24 pt-4">
         {/* Stats Card */}
         <div className="rounded-2xl bg-white p-4 shadow-md">
-          {/* Balance */}
+          {/* Balance - Monthly */}
           <div className="mb-3 text-center">
-            <p className="text-xs text-gray-500">{t("dashboard.balance")}</p>
+            <p className="text-xs text-gray-500">
+              {t("dashboard.balance")} ({dateRangeLabel})
+            </p>
             <p
               className={`text-xl font-bold ${
                 stats.balance >= 0 ? "text-blue-600" : "text-red-500"
@@ -384,7 +487,7 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
             </p>
           </div>
 
-          {/* Income & Expense */}
+          {/* Monthly Income & Expense */}
           <div className="grid grid-cols-2 gap-3 border-t border-gray-100 pt-3">
             <div className="flex items-center gap-2">
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-100">
@@ -411,128 +514,79 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Date Filter */}
-        <div className="mt-4 space-y-2">
-          {/* Quick filter buttons */}
-          <div className="flex flex-wrap gap-2">
-            <Button
-              size="small"
-              icon={<CalendarOutlined />}
-              onClick={() => {
-                setDateRange([
-                  dayjs().startOf("month"),
-                  dayjs().endOf("month"),
-                ]);
-              }}
-              type={
-                dateRange[0].isSame(dayjs().startOf("month"), "day") &&
-                dateRange[1].isSame(dayjs().endOf("month"), "day")
-                  ? "primary"
-                  : "default"
-              }
-            >
-              {t("dashboard.filter.thisMonth")}
-            </Button>
-            <Button
-              size="small"
-              onClick={() => {
-                setDateRange([
-                  dayjs().subtract(1, "month").startOf("month"),
-                  dayjs().subtract(1, "month").endOf("month"),
-                ]);
-              }}
-              type={
-                dateRange[0].isSame(
-                  dayjs().subtract(1, "month").startOf("month"),
-                  "day"
-                )
-                  ? "primary"
-                  : "default"
-              }
-            >
-              {t("dashboard.filter.lastMonth")}
-            </Button>
-            <Button
-              size="small"
-              onClick={() => {
-                setDateRange([dayjs().subtract(6, "day"), dayjs()]);
-              }}
-              type={
-                dateRange[0].isSame(dayjs().subtract(6, "day"), "day") &&
-                dateRange[1].isSame(dayjs(), "day")
-                  ? "primary"
-                  : "default"
-              }
-            >
-              {t("dashboard.filter.days7")}
-            </Button>
-            <Button
-              size="small"
-              onClick={() => {
-                setDateRange([dayjs().subtract(29, "day"), dayjs()]);
-              }}
-              type={
-                dateRange[0].isSame(dayjs().subtract(29, "day"), "day") &&
-                dateRange[1].isSame(dayjs(), "day")
-                  ? "primary"
-                  : "default"
-              }
-            >
-              {t("dashboard.filter.days30")}
-            </Button>
-          </div>
-          {/* Date range - 2 separate pickers for mobile friendly */}
-          <div className="flex items-center gap-2">
-            <DatePicker
-              value={dateRange[0]}
-              onChange={(date) => {
-                if (date) {
-                  setDateRange([date, dateRange[1]]);
-                }
-              }}
-              format="DD/MM/YYYY"
-              allowClear={false}
-              size="middle"
-              className="flex-1"
-              placeholder={t("dashboard.filter.from")}
-              inputReadOnly
-            />
-            <span className="text-gray-400">→</span>
-            <DatePicker
-              value={dateRange[1]}
-              onChange={(date) => {
-                if (date) {
-                  setDateRange([dateRange[0], date]);
-                }
-              }}
-              format="DD/MM/YYYY"
-              allowClear={false}
-              size="middle"
-              className="flex-1"
-              placeholder={t("dashboard.filter.to")}
-              inputReadOnly
-            />
+          {/* Daily Stats for Selected Date */}
+          <div className="mt-3 border-t border-gray-100 pt-3">
+            <p className="text-xs text-gray-500 text-center mb-2">
+              {selectedDate.format("DD/MM/YYYY")}
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="text-center p-2 bg-green-50 rounded-lg">
+                <p className="text-xs text-gray-500">{t("dashboard.income")}</p>
+                <p className="text-sm font-semibold text-green-600">
+                  +
+                  {formatNumber(
+                    dailyTotals[selectedDate.format("YYYY-MM-DD")]?.income || 0
+                  )}
+                </p>
+              </div>
+              <div className="text-center p-2 bg-red-50 rounded-lg">
+                <p className="text-xs text-gray-500">
+                  {t("dashboard.expense")}
+                </p>
+                <p className="text-sm font-semibold text-red-600">
+                  -
+                  {formatNumber(
+                    dailyTotals[selectedDate.format("YYYY-MM-DD")]?.expense || 0
+                  )}
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Transaction List */}
+        {/* Calendar View */}
+        {/* Mobile: Compact Calendar */}
+        <div className="mt-4 rounded-2xl bg-white p-2 shadow-md md:hidden">
+          <Calendar
+            fullscreen={false}
+            value={selectedDate}
+            onSelect={onCalendarSelect}
+            onPanelChange={onPanelChange}
+            cellRender={cellRenderMobile}
+            className="mobile-calendar"
+          />
+        </div>
+
+        {/* Desktop: Fullscreen Calendar like Ant Design example */}
+        <div className="mt-4 rounded-2xl bg-white p-4 shadow-md hidden md:block">
+          <Calendar
+            value={selectedDate}
+            onSelect={onCalendarSelect}
+            onPanelChange={onPanelChange}
+            cellRender={cellRenderDesktop}
+            className="desktop-calendar"
+          />
+        </div>
+
+        {/* Transaction List for Selected Date */}
         <div className="mt-4">
           <div className="mb-2 flex items-center justify-between">
             <h2 className="text-sm font-semibold text-gray-700">
-              Giao dịch ({sortedTransactions.length})
+              {t("dashboard.transactions")} ({filteredTransactions.length})
             </h2>
-            <span className="text-xs text-gray-400">{dateRangeLabel}</span>
+            <span className="text-xs text-gray-500 font-medium">
+              {selectedDate.format("DD/MM/YYYY")}
+            </span>
           </div>
 
           {loading ? (
             <div className="rounded-xl bg-white p-8 shadow-sm flex justify-center">
               <Spin />
             </div>
-          ) : sortedTransactions.length > 0 ? (
+          ) : filteredTransactions.length > 0 ? (
             <div className="space-y-2">
-              {sortedTransactions.map((tx) => (
+              {filteredTransactions.map((tx) => (
                 <div key={tx.id} className="rounded-xl bg-white p-3 shadow-sm">
                   {/* Row 1: Category, Type, Amount */}
                   <div className="flex items-center justify-between">
