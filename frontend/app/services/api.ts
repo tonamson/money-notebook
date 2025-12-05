@@ -4,14 +4,11 @@ import axios, {
   AxiosResponse,
   InternalAxiosRequestConfig,
 } from "axios";
+import { useAuthStore } from "../stores/authStore";
 
 // Base API configuration
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:2053/api";
-
-// Storage keys
-const TOKEN_KEY = "money_notebook_token";
-const CODE_KEY = "money_notebook_code";
 
 // API Response interface
 export interface ApiResponse<T = unknown> {
@@ -25,42 +22,6 @@ export interface ApiResponse<T = unknown> {
     limit: number;
   };
 }
-
-// Token management
-export const tokenManager = {
-  getToken: (): string | null => {
-    if (typeof window === "undefined") return null;
-    return localStorage.getItem(TOKEN_KEY);
-  },
-  setToken: (token: string): void => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem(TOKEN_KEY, token);
-    }
-  },
-  removeToken: (): void => {
-    if (typeof window !== "undefined") {
-      localStorage.removeItem(TOKEN_KEY);
-    }
-  },
-  getCode: (): string | null => {
-    if (typeof window === "undefined") return null;
-    return localStorage.getItem(CODE_KEY);
-  },
-  setCode: (code: string): void => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem(CODE_KEY, code);
-    }
-  },
-  removeCode: (): void => {
-    if (typeof window !== "undefined") {
-      localStorage.removeItem(CODE_KEY);
-    }
-  },
-  clear: (): void => {
-    tokenManager.removeToken();
-    tokenManager.removeCode();
-  },
-};
 
 // Base API class - inherit from this for all services
 export class BaseApi {
@@ -78,8 +39,9 @@ export class BaseApi {
     // Request interceptor
     this.api.interceptors.request.use(
       (config: InternalAxiosRequestConfig) => {
-        // Get token from localStorage for auth
-        const token = tokenManager.getToken();
+        // Get token from auth store
+        const authState = useAuthStore.getState();
+        const token = authState.accessToken;
 
         if (token) {
           config.headers.set("Authorization", `Bearer ${token}`);
@@ -103,8 +65,9 @@ export class BaseApi {
           const { status } = error.response;
 
           if (status === 401) {
-            // Unauthorized - clear token and redirect to login
-            tokenManager.clear();
+            // Unauthorized - logout and reload
+            const authState = useAuthStore.getState();
+            authState.logout();
             if (typeof window !== "undefined") {
               window.location.reload();
             }

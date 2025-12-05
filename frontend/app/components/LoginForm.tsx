@@ -5,22 +5,19 @@ import { Input, Button, App } from "antd";
 import { WalletOutlined, KeyOutlined, PlusOutlined } from "@ant-design/icons";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
-import { authService } from "../services/authService";
+import { useAuthStore } from "../stores/authStore";
 import LanguageSwitcher from "./LanguageSwitcher";
 
-interface LoginFormProps {
-  onLogin: (code: string) => void;
-}
-
-export default function LoginForm({ onLogin }: LoginFormProps) {
+export default function LoginForm() {
   const { t } = useTranslation();
   const { message } = App.useApp();
+  const { login, generateCode: generateNewCode } = useAuthStore();
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const generateCode = async () => {
+  const handleGenerateCode = async () => {
     try {
-      const response = await authService.generateCode();
+      const response = await generateNewCode();
       if (response.success && response.data) {
         setCode(response.data.code);
         message.success(t("login.codeCreated"));
@@ -51,10 +48,9 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
 
     setLoading(true);
     try {
-      const response = await authService.login(code.toUpperCase());
+      const response = await login(code.toUpperCase());
       if (response.success) {
         message.success(t("login.success"));
-        onLogin(code.toUpperCase());
       } else {
         message.error(response.error || t("login.failed"));
       }
@@ -129,7 +125,7 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
             size="large"
             block
             icon={<PlusOutlined />}
-            onClick={generateCode}
+            onClick={handleGenerateCode}
             className="!h-14 !rounded-xl !text-base"
           >
             {t("login.createNew")}

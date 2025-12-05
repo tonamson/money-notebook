@@ -1,33 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import LoginForm from "./components/LoginForm";
 import Dashboard from "./components/Dashboard";
-import { authService } from "./services/authService";
+import { useAuthStore } from "./stores/authStore";
 
 export default function Home() {
-  const [userCode, setUserCode] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    // Kiểm tra nếu đã có token và code
-    if (authService.isAuthenticated()) {
-      const savedCode = authService.getSavedCode();
-      if (savedCode) {
-        setUserCode(savedCode);
-      }
-    }
-    setIsLoading(false);
-  }, []);
-
-  const handleLogin = (code: string) => {
-    setUserCode(code);
-  };
-
-  const handleLogout = () => {
-    authService.logout();
-    setUserCode(null);
-  };
+  const { userCode, isAuthenticated, isLoading, logout } = useAuthStore();
 
   if (isLoading) {
     return (
@@ -37,9 +15,9 @@ export default function Home() {
     );
   }
 
-  if (!userCode) {
-    return <LoginForm onLogin={handleLogin} />;
+  if (!isAuthenticated || !userCode) {
+    return <LoginForm />;
   }
 
-  return <Dashboard userCode={userCode} onLogout={handleLogout} />;
+  return <Dashboard userCode={userCode} onLogout={logout} />;
 }
