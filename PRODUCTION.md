@@ -88,26 +88,57 @@ MYSQL_PASSWORD=MyStr0ng!UserP@ss2024
 JWT_SECRET=<chạy: openssl rand -base64 64>
 ```
 
-#### 3.2. Cấu trúc Environment Files
+#### 3.2. Giải thích cách Docker sử dụng Environment
 
 ```
-money-notebook/
-├── .env                    ← Docker Compose env (SSL, DB, JWT)
-├── .env.ssl.example        ← Mẫu cho production SSL
-│
-├── api/
-│   ├── .env               ← Backend env (development)
-│   └── .env.example       ← Mẫu cho backend
-│
-└── frontend/
-    └── .env.local         ← Frontend env (development)
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        PRODUCTION DOCKER                                     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   money-notebook/                                                            │
+│   ├── .env  ◄──────────── Docker Compose đọc file này                       │
+│   │                       (truyền biến vào containers)                       │
+│   │                                                                          │
+│   ├── api/                                                                   │
+│   │   └── .env  ✗        KHÔNG CẦN tạo, Docker đã truyền biến               │
+│   │                                                                          │
+│   └── frontend/                                                              │
+│       └── .env.local ✗   KHÔNG CẦN tạo, biến được truyền lúc build          │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        DEVELOPMENT LOCAL                                     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   money-notebook/                                                            │
+│   ├── .env               Không cần (chỉ dùng cho Docker)                    │
+│   │                                                                          │
+│   ├── api/                                                                   │
+│   │   └── .env  ◄─────── CẦN TẠO để chạy: yarn start:dev                    │
+│   │                                                                          │
+│   └── frontend/                                                              │
+│       └── .env.local ◄── CẦN TẠO để chạy: yarn dev                          │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
+
+**Tóm tắt:**
+
+| Môi trường | `.env` (gốc) | `api/.env` | `frontend/.env.local` |
+|------------|--------------|------------|----------------------|
+| **Production Docker** | ✅ BẮT BUỘC | ❌ Không cần | ❌ Không cần |
+| **Development Local** | ❌ Không cần | ✅ BẮT BUỘC | ✅ BẮT BUỘC |
+
+> **Giải thích**: Khi build Docker, các biến từ file `.env` gốc được:
+> - Truyền vào `api` container qua `environment:` trong docker-compose
+> - Truyền vào `frontend` lúc build qua `args:` (biến `NEXT_PUBLIC_*` được "đóng gói" vào JS bundle)
 
 #### 3.3. Backend Environment (`api/.env`)
 
-> ⚠️ **Lưu ý**: Khi chạy Docker production, các biến được truyền qua `docker-compose.ssl.yml`, không cần tạo file `api/.env`.
-
-**Chỉ cần khi chạy development local:**
+> ⚠️ **Chỉ cần khi chạy development local** (yarn start:dev)
+> 
+> Khi chạy Docker production, các biến được truyền qua `docker-compose.ssl.yml` → `environment:`, Docker container sẽ nhận biến trực tiếp, KHÔNG đọc file `api/.env`.
 
 ```bash
 cd api
@@ -138,9 +169,9 @@ NODE_ENV=development
 
 #### 3.4. Frontend Environment (`frontend/.env.local`)
 
-> ⚠️ **Lưu ý**: Khi build Docker production, `NEXT_PUBLIC_API_URL` được truyền qua build args trong `docker-compose.ssl.yml`.
-
-**Chỉ cần khi chạy development local:**
+> ⚠️ **Chỉ cần khi chạy development local** (yarn dev)
+> 
+> Khi build Docker production, `NEXT_PUBLIC_API_URL` được truyền qua `args:` trong docker-compose. Biến này được "đóng gói" vào JS bundle lúc build, nên KHÔNG cần file `.env.local` trong container.
 
 ```bash
 cd frontend
