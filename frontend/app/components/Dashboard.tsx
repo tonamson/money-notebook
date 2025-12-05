@@ -380,7 +380,7 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
           <div className="grid grid-cols-2 gap-3 border-t border-gray-100 pt-3">
             <div className="flex items-center gap-2">
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-100">
-                <ArrowUpOutlined className="text-sm text-green-600" />
+                <ArrowDownOutlined className="text-sm text-green-600" />
               </div>
               <div>
                 <p className="text-xs text-gray-500">Thu nhập</p>
@@ -391,7 +391,7 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
             </div>
             <div className="flex items-center gap-2">
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-red-100">
-                <ArrowDownOutlined className="text-sm text-red-600" />
+                <ArrowUpOutlined className="text-sm text-red-600" />
               </div>
               <div>
                 <p className="text-xs text-gray-500">Chi tiêu</p>
