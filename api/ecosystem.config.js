@@ -11,6 +11,9 @@ module.exports = {
       out_file: '/var/log/pm2/api-out.log',
       merge_logs: true,
       time: true,
+      env: {
+        NODE_ENV: 'production',
+      },
     },
   ],
 };

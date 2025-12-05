@@ -5,10 +5,9 @@ import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
 import * as fs from 'fs';
 import * as path from 'path';
-import 'dotenv/config';
 
 async function bootstrap() {
-  // SSL configuration (production) - đọc từ .env trước khi tạo app
+  // SSL configuration (production)
   const isProd = process.env.NODE_ENV === 'production';
   const sslPath = path.join(__dirname, '..', '..', '..', 'ssl');
 
