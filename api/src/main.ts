@@ -1,12 +1,14 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
 import * as fs from 'fs';
 import * as path from 'path';
+import 'dotenv/config';
 
 async function bootstrap() {
-  // SSL configuration (production)
+  // SSL configuration (production) - đọc từ .env trước khi tạo app
   const isProd = process.env.NODE_ENV === 'production';
   const sslPath = path.join(__dirname, '..', '..', '..', 'ssl');
 
@@ -72,7 +74,8 @@ async function bootstrap() {
     },
   });
 
-  const port = 2053;
+  const configService = app.get(ConfigService);
+  const port = configService.get<number>('PORT', 2053);
   const protocol = httpsOptions ? 'https' : 'http';
   await app.listen(port);
   console.log(`🚀 Application is running on: ${protocol}://localhost:${port}/`);
