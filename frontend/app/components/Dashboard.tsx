@@ -533,9 +533,9 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
                         }`}
                       >
                         {t.type === "income" ? (
-                          <ArrowUpOutlined className="text-sm text-green-600" />
+                          <ArrowDownOutlined className="text-sm text-green-600" />
                         ) : (
-                          <ArrowDownOutlined className="text-sm text-red-600" />
+                          <ArrowUpOutlined className="text-sm text-red-600" />
                         )}
                       </div>
                       <span className="text-sm font-medium text-gray-800">
