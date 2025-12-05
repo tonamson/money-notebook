@@ -1,15 +1,16 @@
-import { IsString, Length } from 'class-validator';
+import { IsString, Length, MinLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class LoginDto {
   @ApiProperty({
-    description: 'Mã đăng nhập 12 ký tự',
+    description: 'Mã đăng nhập tối đa 12 ký tự',
     example: 'ABC123XYZ789',
-    minLength: 12,
+    minLength: 1,
     maxLength: 12,
   })
   @IsString()
-  @Length(12, 12, { message: 'Mã đăng nhập phải có đúng 12 ký tự' })
+  @MinLength(1, { message: 'Mã đăng nhập không được để trống' })
+  @Length(1, 12, { message: 'Mã đăng nhập tối đa 12 ký tự' })
   code: string;
 }
 
