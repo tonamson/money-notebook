@@ -27,7 +27,9 @@ import {
   EditOutlined,
   CopyOutlined,
   CalendarOutlined,
+  BookOutlined,
 } from "@ant-design/icons";
+import Link from "next/link";
 import dayjs, { Dayjs } from "dayjs";
 import { categoryService, Category } from "../services/categoryService";
 import {
@@ -606,8 +608,15 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
         </div>
       </div>
 
-      {/* Floating Add Button */}
-      <div className="fixed bottom-6 left-0 right-0 z-10 flex justify-center px-4">
+      {/* Floating Buttons */}
+      <div className="fixed bottom-6 left-0 right-0 z-10 flex justify-center gap-2 px-4">
+        <Link href="/huong-dan">
+          <Button
+            size="large"
+            icon={<BookOutlined className="!text-blue-500" />}
+            className="!h-12 !w-12 !rounded-full !shadow-lg !bg-white !border-0 !flex !items-center !justify-center hover:!bg-blue-50"
+          />
+        </Link>
         <Button
           type="primary"
           size="large"

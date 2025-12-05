@@ -2,7 +2,13 @@
 
 import { useState } from "react";
 import { Input, Button, App } from "antd";
-import { WalletOutlined, KeyOutlined, PlusOutlined } from "@ant-design/icons";
+import {
+  WalletOutlined,
+  KeyOutlined,
+  PlusOutlined,
+  BookOutlined,
+} from "@ant-design/icons";
+import Link from "next/link";
 import { authService } from "../services/authService";
 
 interface LoginFormProps {
@@ -123,6 +129,20 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
           >
             Tạo mã mới
           </Button>
+
+          {/* Guide Button - Nổi bật */}
+          <div className="mt-6 pt-6 border-t border-gray-200">
+            <Link href="/huong-dan">
+              <Button
+                type="default"
+                size="large"
+                block
+                className="!h-12 !rounded-xl !border-blue-400 !text-blue-600 hover:!bg-blue-50"
+              >
+                📖 Hướng dẫn sử dụng
+              </Button>
+            </Link>
+          </div>
         </div>
 
         <p className="mt-6 text-center text-sm text-blue-100">
