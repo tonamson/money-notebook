@@ -1,0 +1,27 @@
+{
+  "name": "Money Notebook - Quản lý thu chi cá nhân",
+  "short_name": "Money Notebook",
+  "description": "Ứng dụng ghi chép thu chi đơn giản, theo dõi tài chính cá nhân hiệu quả",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3b82f6",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/money-bag.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["finance", "productivity", "utilities"],
+  "lang": "vi",
+  "dir": "ltr"
+}

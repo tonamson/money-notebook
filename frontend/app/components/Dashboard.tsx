@@ -25,6 +25,7 @@ import {
   DeleteOutlined,
   LogoutOutlined,
   EditOutlined,
+  CopyOutlined,
   CalendarOutlined,
 } from "@ant-design/icons";
 import dayjs, { Dayjs } from "dayjs";
@@ -85,6 +86,16 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
     startDate: "",
     endDate: "",
   });
+
+  // Copy user code
+  const handleCopyCode = async () => {
+    try {
+      await navigator.clipboard.writeText(userCode);
+      message.success("Đã copy mã đăng nhập");
+    } catch {
+      message.error("Không thể copy");
+    }
+  };
 
   // Load categories from API
   const loadCategories = useCallback(async () => {
@@ -336,7 +347,16 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
             size="small"
           />
         </div>
-        <p className="mt-1 text-xs text-blue-100">Mã: {userCode}</p>
+        <p className="mt-1 text-xs text-blue-100 flex items-center gap-1">
+          Mã: {userCode}
+          <Button
+            type="text"
+            size="small"
+            icon={<CopyOutlined />}
+            onClick={handleCopyCode}
+            className="!text-blue-200 hover:!text-white !p-0 !h-4 !w-4 !min-w-0"
+          />
+        </p>
       </header>
 
       {/* Main Content with padding for floating button */}
