@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { persist, createJSONStorage } from "zustand/middleware";
 import { authService, User, LoginResponse } from "../services/authService";
 import { ApiResponse } from "../services/api";
 
@@ -77,6 +77,7 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: STORAGE_KEY,
+      storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         user: state.user,
         userCode: state.userCode,
