@@ -69,8 +69,6 @@ services:
     # Cho phép nginx gọi API trên host (localhost:2053)
     extra_hosts:
       - "host.docker.internal:host-gateway"
-    # Chạy khi cần renew, không chạy liên tục
-    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
 
 volumes:
   mysql_data:

@@ -2,9 +2,24 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import * as fs from 'fs';
+import * as path from 'path';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  // SSL configuration (production)
+  const isProd = process.env.NODE_ENV === 'production';
+  const sslPath = path.join(__dirname, '..', '..', '..', 'ssl');
+
+  let httpsOptions: { key: Buffer; cert: Buffer } | undefined = undefined;
+  if (isProd && fs.existsSync(path.join(sslPath, 'fullchain.pem'))) {
+    httpsOptions = {
+      key: fs.readFileSync(path.join(sslPath, 'privkey.pem')),
+      cert: fs.readFileSync(path.join(sslPath, 'fullchain.pem')),
+    };
+    console.log('🔒 SSL enabled');
+  }
+
+  const app = await NestFactory.create(AppModule, { httpsOptions });
 
   // CORS
   app.enableCors({
@@ -12,6 +27,7 @@ async function bootstrap() {
       'http://localhost:3000',
       'http://127.0.0.1:3000',
       'http://moneynote.local:8888',
+      'https://moneynote.store',
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-User-Code'],
@@ -57,8 +73,11 @@ async function bootstrap() {
   });
 
   const port = 2053;
+  const protocol = httpsOptions ? 'https' : 'http';
   await app.listen(port);
-  console.log(`🚀 Application is running on: http://localhost:${port}/`);
-  console.log(`📚 Swagger docs available at: http://localhost:${port}/docs`);
+  console.log(`🚀 Application is running on: ${protocol}://localhost:${port}/`);
+  console.log(
+    `📚 Swagger docs available at: ${protocol}://localhost:${port}/docs`,
+  );
 }
 bootstrap();
