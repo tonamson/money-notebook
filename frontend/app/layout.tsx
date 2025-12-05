@@ -59,7 +59,7 @@ export const metadata: Metadata = {
       "Ghi chép thu chi đơn giản, theo dõi tài chính hiệu quả. Phân loại chi tiêu, thống kê thu nhập, quản lý ngân sách dễ dàng.",
     images: [
       {
-        url: "/og-image.png",
+        url: "https://moneynote.store/og-image.png",
         width: 1200,
         height: 630,
         alt: "Money Notebook - Ứng dụng quản lý thu chi",
@@ -71,7 +71,7 @@ export const metadata: Metadata = {
     title: "Money Notebook - Quản lý thu chi cá nhân miễn phí",
     description:
       "Ghi chép thu chi đơn giản, theo dõi tài chính hiệu quả. Miễn phí 100%.",
-    images: ["/og-image.png"],
+    images: ["https://moneynote.store/og-image.png"],
   },
   alternates: {
     canonical: "https://moneynote.store",
