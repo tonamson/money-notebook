@@ -669,15 +669,14 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
               style={{ width: "100%" }}
               size="large"
               min={0}
-              step={10000}
               controls={false}
               formatter={(value) =>
                 `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
               }
               parser={(value) => Number(value?.replace(/\$\s?|(,*)/g, "") || 0)}
-              suffix="₫"
               placeholder="Nhập số tiền"
               className="!text-2xl !font-semibold"
+              inputMode="numeric"
             />
           </Form.Item>
 
