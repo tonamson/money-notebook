@@ -9,6 +9,7 @@ import * as path from 'path';
 async function bootstrap() {
   // SSL configuration (production)
   const isProd = process.env.NODE_ENV === 'production';
+  console.log({ isProd });
   const sslPath = path.join(__dirname, '..', '..', '..', 'ssl');
 
   let httpsOptions: { key: Buffer; cert: Buffer } | undefined = undefined;
