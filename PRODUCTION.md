@@ -29,10 +29,22 @@
 
 ```
 Server
-├── Frontend (Static HTML) ──► Nginx (Port 443/SSL)
+├── Frontend (Next.js SSR) ──► Nginx (Port 443/SSL)
 ├── API (NestJS + PM2)     ──► Nginx Reverse Proxy
 ├── MySQL 8.0              ──► Internal Network
 └── Redis 7                ──► Internal Network
+```
+
+**Các file chính:**
+
+```
+money-notebook/
+├── Dockerfile              ← Build image production
+├── docker-compose.ssl.yml  ← Chạy production với SSL
+├── .env                    ← Biến môi trường
+└── scripts/
+    ├── setup-ssl.sh        ← Cài SSL lần đầu
+    └── renew-ssl.sh        ← Gia hạn SSL
 ```
 
 ---

@@ -37,7 +37,7 @@ services:
   app:
     build:
       context: .
-      dockerfile: Dockerfile.ssl
+      dockerfile: Dockerfile
       args:
         NEXT_PUBLIC_API_URL: https://${API_DOMAIN}
     container_name: money-notebook-app
