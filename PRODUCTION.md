@@ -125,19 +125,20 @@ JWT_SECRET=<chạy: openssl rand -base64 64>
 
 **Tóm tắt:**
 
-| Môi trường | `.env` (gốc) | `api/.env` | `frontend/.env.local` |
-|------------|--------------|------------|----------------------|
-| **Production Docker** | ✅ BẮT BUỘC | ❌ Không cần | ❌ Không cần |
-| **Development Local** | ❌ Không cần | ✅ BẮT BUỘC | ✅ BẮT BUỘC |
+| Môi trường            | `.env` (gốc) | `api/.env`   | `frontend/.env.local` |
+| --------------------- | ------------ | ------------ | --------------------- |
+| **Production Docker** | ✅ BẮT BUỘC  | ❌ Không cần | ❌ Không cần          |
+| **Development Local** | ❌ Không cần | ✅ BẮT BUỘC  | ✅ BẮT BUỘC           |
 
 > **Giải thích**: Khi build Docker, các biến từ file `.env` gốc được:
+>
 > - Truyền vào `api` container qua `environment:` trong docker-compose
 > - Truyền vào `frontend` lúc build qua `args:` (biến `NEXT_PUBLIC_*` được "đóng gói" vào JS bundle)
 
 #### 3.3. Backend Environment (`api/.env`)
 
 > ⚠️ **Chỉ cần khi chạy development local** (yarn start:dev)
-> 
+>
 > Khi chạy Docker production, các biến được truyền qua `docker-compose.ssl.yml` → `environment:`, Docker container sẽ nhận biến trực tiếp, KHÔNG đọc file `api/.env`.
 
 ```bash
@@ -170,7 +171,7 @@ NODE_ENV=development
 #### 3.4. Frontend Environment (`frontend/.env.local`)
 
 > ⚠️ **Chỉ cần khi chạy development local** (yarn dev)
-> 
+>
 > Khi build Docker production, `NEXT_PUBLIC_API_URL` được truyền qua `args:` trong docker-compose. Biến này được "đóng gói" vào JS bundle lúc build, nên KHÔNG cần file `.env.local` trong container.
 
 ```bash
