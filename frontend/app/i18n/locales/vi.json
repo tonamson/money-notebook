@@ -1,0 +1,151 @@
+{
+  "app": {
+    "name": "Money Notebook",
+    "tagline": "Quản lý thu chi cá nhân"
+  },
+  "login": {
+    "accessCode": "Mã truy cập",
+    "placeholder": "Nhập 12 ký tự",
+    "characters": "ký tự",
+    "lettersAndNumbers": "Chữ và số",
+    "access": "Truy cập",
+    "or": "hoặc",
+    "createNew": "Tạo mã mới",
+    "codeCreated": "Đã tạo mã mới! Hãy lưu lại mã này.",
+    "uniqueCode": "Mỗi mã tương ứng với một sổ ghi chép riêng.",
+    "rememberCode": "Hãy ghi nhớ mã của bạn!",
+    "guide": "Hướng dẫn sử dụng",
+    "validation": {
+      "length": "Mã truy cập phải có đúng 12 ký tự",
+      "format": "Mã truy cập chỉ chứa chữ cái và số"
+    },
+    "success": "Đăng nhập thành công!",
+    "failed": "Đăng nhập thất bại",
+    "connectionError": "Không thể kết nối server"
+  },
+  "dashboard": {
+    "logout": "Đăng xuất",
+    "balance": "Số dư",
+    "income": "Thu nhập",
+    "expense": "Chi tiêu",
+    "addTransaction": "Thêm giao dịch",
+    "editTransaction": "Sửa giao dịch",
+    "noTransactions": "Chưa có giao dịch nào",
+    "startAdding": "Bắt đầu thêm giao dịch đầu tiên!",
+    "codeCopied": "Đã copy mã đăng nhập",
+    "copyFailed": "Không thể copy",
+    "filter": {
+      "thisMonth": "Tháng này",
+      "lastMonth": "Tháng trước",
+      "days7": "7 ngày",
+      "days30": "30 ngày",
+      "custom": "Tùy chọn",
+      "from": "Từ",
+      "to": "Đến"
+    },
+    "form": {
+      "type": "Loại",
+      "incomeType": "Thu nhập",
+      "expenseType": "Chi tiêu",
+      "amount": "Số tiền",
+      "amountPlaceholder": "Nhập số tiền",
+      "category": "Danh mục",
+      "categoryPlaceholder": "Chọn hoặc tạo mới",
+      "addCategory": "Thêm",
+      "date": "Ngày",
+      "note": "Ghi chú",
+      "notePlaceholder": "Mô tả (tùy chọn)",
+      "save": "Lưu",
+      "cancel": "Hủy"
+    },
+    "messages": {
+      "added": "Đã thêm giao dịch mới",
+      "addFailed": "Không thể thêm giao dịch",
+      "updated": "Đã cập nhật giao dịch",
+      "updateFailed": "Không thể cập nhật giao dịch",
+      "deleted": "Đã xóa giao dịch",
+      "deleteFailed": "Không thể xóa giao dịch",
+      "categoryAdded": "Đã thêm danh mục",
+      "categoryFailed": "Không thể thêm danh mục",
+      "loadFailed": "Không thể tải dữ liệu"
+    },
+    "confirm": {
+      "deleteTitle": "Xóa giao dịch này?",
+      "deleteOk": "Xóa",
+      "deleteCancel": "Hủy"
+    }
+  },
+  "guide": {
+    "title": "Hướng dẫn sử dụng",
+    "welcome": "Chào mừng bạn!",
+    "intro": "Làm theo các bước dưới đây để bắt đầu quản lý thu chi.",
+    "step1": {
+      "title": "Bước 1: Tạo mã đăng nhập",
+      "subtitle": "Nhấn \"Tạo mã mới\" để bắt đầu",
+      "items": [
+        "Mã gồm 12 ký tự (chữ và số)",
+        "Quan trọng: Lưu lại mã này!",
+        "Không cần email hay mật khẩu"
+      ]
+    },
+    "step2": {
+      "title": "Bước 2: Đăng nhập",
+      "subtitle": "Nhập mã và nhấn \"Truy cập\"",
+      "items": [
+        "Nhập mã 12 ký tự đã lưu",
+        "Đăng nhập một lần, dùng mãi",
+        "Dùng cùng mã trên nhiều thiết bị"
+      ]
+    },
+    "step3": {
+      "title": "Bước 3: Thêm giao dịch",
+      "subtitle": "Nhấn nút \"Thêm giao dịch\"",
+      "items": [
+        "Loại: Thu nhập hoặc Chi tiêu",
+        "Số tiền: Nhập số VNĐ",
+        "Danh mục: Chọn hoặc tạo mới",
+        "Ngày: Chọn ngày giao dịch",
+        "Ghi chú: Mô tả (tùy chọn)"
+      ]
+    },
+    "step4": {
+      "title": "Bước 4: Xem thống kê",
+      "subtitle": "Bảng tổng hợp ở đầu màn hình",
+      "items": [
+        "Số dư: Tổng thu - Tổng chi",
+        "Thu nhập: Tổng các khoản thu",
+        "Chi tiêu: Tổng các khoản chi"
+      ]
+    },
+    "step5": {
+      "title": "Bước 5: Lọc theo thời gian",
+      "subtitle": "Các nút lọc nhanh",
+      "items": [
+        "Tháng này/trước: Xem theo tháng",
+        "7/30 ngày: Xem gần đây",
+        "Tùy chọn: Chọn khoảng ngày"
+      ]
+    },
+    "step6": {
+      "title": "Bước 6: Sửa/Xóa giao dịch",
+      "subtitle": "Nút thao tác bên phải mỗi giao dịch",
+      "items": ["Sửa: Chỉnh sửa thông tin", "Xóa: Xóa giao dịch (có xác nhận)"]
+    },
+    "tips": {
+      "title": "💡 Mẹo hay",
+      "items": [
+        "Copy mã nhanh: Nhấn icon copy ở header",
+        "Tạo danh mục: Gõ tên mới khi thêm giao dịch",
+        "Đồng bộ: Dùng cùng mã trên nhiều thiết bị",
+        "Ghi ngay: Đừng quên ghi chép kịp thời!"
+      ]
+    },
+    "startNow": "Bắt đầu sử dụng ngay"
+  },
+  "language": {
+    "select": "Ngôn ngữ",
+    "en": "English",
+    "vi": "Tiếng Việt",
+    "zh": "中文"
+  }
+}

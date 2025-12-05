@@ -1,0 +1,154 @@
+{
+  "app": {
+    "name": "Money Notebook",
+    "tagline": "Personal Finance Management"
+  },
+  "login": {
+    "accessCode": "Access Code",
+    "placeholder": "Enter 12 characters",
+    "characters": "characters",
+    "lettersAndNumbers": "Letters and numbers",
+    "access": "Access",
+    "or": "or",
+    "createNew": "Create New Code",
+    "codeCreated": "New code created! Please save this code.",
+    "uniqueCode": "Each code corresponds to a separate notebook.",
+    "rememberCode": "Remember your code!",
+    "guide": "User Guide",
+    "validation": {
+      "length": "Access code must be exactly 12 characters",
+      "format": "Access code can only contain letters and numbers"
+    },
+    "success": "Login successful!",
+    "failed": "Login failed",
+    "connectionError": "Cannot connect to server"
+  },
+  "dashboard": {
+    "logout": "Logout",
+    "balance": "Balance",
+    "income": "Income",
+    "expense": "Expense",
+    "addTransaction": "Add Transaction",
+    "editTransaction": "Edit Transaction",
+    "noTransactions": "No transactions yet",
+    "startAdding": "Start adding your first transaction!",
+    "codeCopied": "Login code copied",
+    "copyFailed": "Cannot copy",
+    "filter": {
+      "thisMonth": "This month",
+      "lastMonth": "Last month",
+      "days7": "7 days",
+      "days30": "30 days",
+      "custom": "Custom",
+      "from": "From",
+      "to": "To"
+    },
+    "form": {
+      "type": "Type",
+      "incomeType": "Income",
+      "expenseType": "Expense",
+      "amount": "Amount",
+      "amountPlaceholder": "Enter amount",
+      "category": "Category",
+      "categoryPlaceholder": "Select or create new",
+      "addCategory": "Add",
+      "date": "Date",
+      "note": "Note",
+      "notePlaceholder": "Optional description",
+      "save": "Save",
+      "cancel": "Cancel"
+    },
+    "messages": {
+      "added": "Transaction added",
+      "addFailed": "Cannot add transaction",
+      "updated": "Transaction updated",
+      "updateFailed": "Cannot update transaction",
+      "deleted": "Transaction deleted",
+      "deleteFailed": "Cannot delete transaction",
+      "categoryAdded": "Category added",
+      "categoryFailed": "Cannot add category",
+      "loadFailed": "Cannot load data"
+    },
+    "confirm": {
+      "deleteTitle": "Delete transaction?",
+      "deleteOk": "Delete",
+      "deleteCancel": "Cancel"
+    }
+  },
+  "guide": {
+    "title": "User Guide",
+    "welcome": "Welcome!",
+    "intro": "Follow these steps to start managing your finances.",
+    "step1": {
+      "title": "Step 1: Create Access Code",
+      "subtitle": "Click \"Create New Code\" to start",
+      "items": [
+        "Code contains 12 characters (letters and numbers)",
+        "Important: Save this code!",
+        "No email or password needed"
+      ]
+    },
+    "step2": {
+      "title": "Step 2: Login",
+      "subtitle": "Enter code and click \"Access\"",
+      "items": [
+        "Enter the 12-character code you saved",
+        "Login once, use forever",
+        "Use same code on multiple devices"
+      ]
+    },
+    "step3": {
+      "title": "Step 3: Add Transaction",
+      "subtitle": "Click \"Add Transaction\" button",
+      "items": [
+        "Type: Income or Expense",
+        "Amount: Enter VND amount",
+        "Category: Select or create new",
+        "Date: Select transaction date",
+        "Note: Description (optional)"
+      ]
+    },
+    "step4": {
+      "title": "Step 4: View Statistics",
+      "subtitle": "Summary table at the top",
+      "items": [
+        "Balance: Total income - Total expense",
+        "Income: Total of all income",
+        "Expense: Total of all expenses"
+      ]
+    },
+    "step5": {
+      "title": "Step 5: Filter by Time",
+      "subtitle": "Quick filter buttons",
+      "items": [
+        "This/Last month: View by month",
+        "7/30 days: View recent",
+        "Custom: Select date range"
+      ]
+    },
+    "step6": {
+      "title": "Step 6: Edit/Delete Transaction",
+      "subtitle": "Action buttons on the right of each transaction",
+      "items": [
+        "Edit: Modify information",
+        "Delete: Remove transaction (with confirmation)"
+      ]
+    },
+    "tips": {
+      "title": "💡 Tips",
+      "items": [
+        "Quick copy code: Click copy icon in header",
+        "Create category: Type new name when adding transaction",
+        "Sync: Use same code on multiple devices",
+        "Record now: Don't forget to record immediately!"
+      ]
+    },
+    "startNow": "Start Using Now"
+  },
+  "language": {
+    "select": "Language",
+    "en": "English",
+    "vi": "Tiếng Việt",
+    "zh": "中文"
+  }
+}

@@ -31,12 +31,14 @@ import {
 } from "@ant-design/icons";
 import Link from "next/link";
 import dayjs, { Dayjs } from "dayjs";
+import { useTranslation } from "react-i18next";
 import { categoryService, Category } from "../services/categoryService";
 import {
   transactionService,
   Transaction,
   TransactionStats,
 } from "../services/transactionService";
+import LanguageSwitcher from "./LanguageSwitcher";
 
 // Form field type
 type TransactionFieldType = {
@@ -53,6 +55,7 @@ interface DashboardProps {
 }
 
 export default function Dashboard({ userCode, onLogout }: DashboardProps) {
+  const { t } = useTranslation();
   const { message } = App.useApp();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(false);
@@ -93,9 +96,9 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
   const handleCopyCode = async () => {
     try {
       await navigator.clipboard.writeText(userCode);
-      message.success("Đã copy mã đăng nhập");
+      message.success(t("dashboard.codeCopied"));
     } catch {
-      message.error("Không thể copy");
+      message.error(t("dashboard.copyFailed"));
     }
   };
 
@@ -114,11 +117,11 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
         setExpenseCategories(expenseRes.data);
       }
     } catch {
-      message.error("Không thể tải danh mục");
+      message.error(t("dashboard.messages.loadFailed"));
     } finally {
       setLoadingCategories(false);
     }
-  }, []);
+  }, [t]);
 
   // Load transactions from API
   const loadTransactions = useCallback(async () => {
@@ -132,11 +135,11 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
         setTransactions(response.data);
       }
     } catch {
-      message.error("Không thể tải giao dịch");
+      message.error(t("dashboard.messages.loadFailed"));
     } finally {
       setLoading(false);
     }
-  }, [dateRange]);
+  }, [dateRange, t]);
 
   // Load stats from API
   const loadStats = useCallback(async () => {
@@ -174,7 +177,7 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
       transactionType
     );
     if (checkRes.success && checkRes.data?.exists) {
-      message.warning("Danh mục đã tồn tại");
+      message.warning(t("dashboard.messages.categoryFailed"));
       return;
     }
 
@@ -191,9 +194,9 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
       }
       setNewCategoryName("");
       form.setFieldValue("category", result.data.name);
-      message.success("Đã thêm danh mục mới");
+      message.success(t("dashboard.messages.categoryAdded"));
     } else {
-      message.error(result.error || "Không thể thêm danh mục");
+      message.error(result.error || t("dashboard.messages.categoryFailed"));
     }
   };
 
@@ -246,14 +249,14 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
     try {
       const response = await transactionService.deleteTransaction(id);
       if (response.success) {
-        message.success("Đã xóa giao dịch");
+        message.success(t("dashboard.messages.deleted"));
         loadTransactions();
         loadStats();
       } else {
-        message.error(response.error || "Không thể xóa giao dịch");
+        message.error(response.error || t("dashboard.messages.deleteFailed"));
       }
     } catch {
-      message.error("Không thể xóa giao dịch");
+      message.error(t("dashboard.messages.deleteFailed"));
     }
   };
 
@@ -288,9 +291,9 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
           transactionData
         );
         if (response.success) {
-          message.success("Đã cập nhật giao dịch");
+          message.success(t("dashboard.messages.updated"));
         } else {
-          message.error(response.error || "Không thể cập nhật giao dịch");
+          message.error(response.error || t("dashboard.messages.updateFailed"));
           setSubmitting(false);
           return;
         }
@@ -299,9 +302,9 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
           transactionData
         );
         if (response.success) {
-          message.success("Đã thêm giao dịch mới");
+          message.success(t("dashboard.messages.added"));
         } else {
-          message.error(response.error || "Không thể thêm giao dịch");
+          message.error(response.error || t("dashboard.messages.addFailed"));
           setSubmitting(false);
           return;
         }
@@ -339,18 +342,21 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <WalletOutlined className="text-xl" />
-            <span className="font-semibold">Money Notebook</span>
+            <span className="font-semibold">{t("app.name")}</span>
           </div>
-          <Button
-            type="text"
-            icon={<LogoutOutlined />}
-            onClick={onLogout}
-            className="!text-white/80 hover:!text-white"
-            size="small"
-          />
+          <div className="flex items-center gap-1">
+            <LanguageSwitcher variant="light" />
+            <Button
+              type="text"
+              icon={<LogoutOutlined />}
+              onClick={onLogout}
+              className="!text-white/80 hover:!text-white"
+              size="small"
+            />
+          </div>
         </div>
         <p className="mt-1 text-xs text-blue-100 flex items-center gap-1">
-          Mã: {userCode}
+          Code: {userCode}
           <Button
             type="text"
             size="small"
@@ -367,7 +373,7 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
         <div className="rounded-2xl bg-white p-4 shadow-md">
           {/* Balance */}
           <div className="mb-3 text-center">
-            <p className="text-xs text-gray-500">Số dư</p>
+            <p className="text-xs text-gray-500">{t("dashboard.balance")}</p>
             <p
               className={`text-xl font-bold ${
                 stats.balance >= 0 ? "text-blue-600" : "text-red-500"
@@ -385,7 +391,7 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
                 <ArrowDownOutlined className="text-sm text-green-600" />
               </div>
               <div>
-                <p className="text-xs text-gray-500">Thu nhập</p>
+                <p className="text-xs text-gray-500">{t("dashboard.income")}</p>
                 <p className="text-sm font-semibold text-green-600">
                   +{formatNumber(stats.totalIncome)}
                 </p>
@@ -396,7 +402,9 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
                 <ArrowUpOutlined className="text-sm text-red-600" />
               </div>
               <div>
-                <p className="text-xs text-gray-500">Chi tiêu</p>
+                <p className="text-xs text-gray-500">
+                  {t("dashboard.expense")}
+                </p>
                 <p className="text-sm font-semibold text-red-600">
                   -{formatNumber(stats.totalExpense)}
                 </p>
@@ -425,7 +433,7 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
                   : "default"
               }
             >
-              Tháng này
+              {t("dashboard.filter.thisMonth")}
             </Button>
             <Button
               size="small"
@@ -444,7 +452,7 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
                   : "default"
               }
             >
-              Tháng trước
+              {t("dashboard.filter.lastMonth")}
             </Button>
             <Button
               size="small"
@@ -458,7 +466,7 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
                   : "default"
               }
             >
-              7 ngày
+              {t("dashboard.filter.days7")}
             </Button>
             <Button
               size="small"
@@ -472,7 +480,7 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
                   : "default"
               }
             >
-              30 ngày
+              {t("dashboard.filter.days30")}
             </Button>
           </div>
           {/* Date range - 2 separate pickers for mobile friendly */}
@@ -488,7 +496,7 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
               allowClear={false}
               size="middle"
               className="flex-1"
-              placeholder="Từ ngày"
+              placeholder={t("dashboard.filter.from")}
               inputReadOnly
             />
             <span className="text-gray-400">→</span>
@@ -503,7 +511,7 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
               allowClear={false}
               size="middle"
               className="flex-1"
-              placeholder="Đến ngày"
+              placeholder={t("dashboard.filter.to")}
               inputReadOnly
             />
           </div>
@@ -524,39 +532,41 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
             </div>
           ) : sortedTransactions.length > 0 ? (
             <div className="space-y-2">
-              {sortedTransactions.map((t) => (
-                <div key={t.id} className="rounded-xl bg-white p-3 shadow-sm">
+              {sortedTransactions.map((tx) => (
+                <div key={tx.id} className="rounded-xl bg-white p-3 shadow-sm">
                   {/* Row 1: Category, Type, Amount */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div
                         className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
-                          t.type === "income" ? "bg-green-100" : "bg-red-100"
+                          tx.type === "income" ? "bg-green-100" : "bg-red-100"
                         }`}
                       >
-                        {t.type === "income" ? (
+                        {tx.type === "income" ? (
                           <ArrowDownOutlined className="text-sm text-green-600" />
                         ) : (
                           <ArrowUpOutlined className="text-sm text-red-600" />
                         )}
                       </div>
                       <span className="text-sm font-medium text-gray-800">
-                        {t.categoryName}
+                        {tx.categoryName}
                       </span>
                       <Tag
-                        color={t.type === "income" ? "green" : "red"}
+                        color={tx.type === "income" ? "green" : "red"}
                         className="!m-0 !text-xs !leading-tight"
                       >
-                        {t.type === "income" ? "Thu" : "Chi"}
+                        {tx.type === "income"
+                          ? t("dashboard.income")
+                          : t("dashboard.expense")}
                       </Tag>
                     </div>
                     <span
                       className={`text-sm font-semibold ${
-                        t.type === "income" ? "text-green-600" : "text-red-600"
+                        tx.type === "income" ? "text-green-600" : "text-red-600"
                       }`}
                     >
-                      {t.type === "income" ? "+" : "-"}
-                      {formatNumber(t.amount)}
+                      {tx.type === "income" ? "+" : "-"}
+                      {formatNumber(tx.amount)}
                     </span>
                   </div>
 
@@ -564,10 +574,10 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
                   <div className="mt-2 flex items-center justify-between border-t border-gray-50 pt-2">
                     <div className="min-w-0 flex-1">
                       <p className="text-xs text-gray-500">
-                        {dayjs(t.transactionDate).format("DD/MM/YYYY")}
+                        {dayjs(tx.transactionDate).format("DD/MM/YYYY")}
                       </p>
                       <p className="truncate text-xs text-gray-400">
-                        {t.note || "Không có ghi chú"}
+                        {tx.note || t("dashboard.noTransactions")}
                       </p>
                     </div>
                     <div className="flex items-center gap-1">
@@ -575,14 +585,14 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
                         type="text"
                         size="small"
                         icon={<EditOutlined className="!text-gray-400" />}
-                        onClick={() => handleEditTransaction(t)}
+                        onClick={() => handleEditTransaction(tx)}
                         className="!h-7 !w-7 !min-w-0 !p-0"
                       />
                       <Popconfirm
-                        title="Xóa giao dịch?"
-                        onConfirm={() => handleDeleteTransaction(t.id)}
-                        okText="Xóa"
-                        cancelText="Hủy"
+                        title={t("dashboard.confirm.deleteTitle")}
+                        onConfirm={() => handleDeleteTransaction(tx.id)}
+                        okText={t("dashboard.confirm.deleteOk")}
+                        cancelText={t("dashboard.confirm.deleteCancel")}
                       >
                         <Button
                           type="text"
@@ -601,7 +611,7 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
             <div className="rounded-xl bg-white p-8 shadow-sm">
               <Empty
                 image={Empty.PRESENTED_IMAGE_SIMPLE}
-                description="Chưa có giao dịch"
+                description={t("dashboard.noTransactions")}
               />
             </div>
           )}
@@ -624,13 +634,17 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
           onClick={handleAddTransaction}
           className="!h-12 !rounded-full !px-6 !font-semibold !shadow-lg"
         >
-          Thêm giao dịch
+          {t("dashboard.addTransaction")}
         </Button>
       </div>
 
       {/* Add/Edit Transaction Modal */}
       <Modal
-        title={editingTransaction ? "Sửa giao dịch" : "Thêm giao dịch mới"}
+        title={
+          editingTransaction
+            ? t("dashboard.editTransaction")
+            : t("dashboard.addTransaction")
+        }
         open={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
         footer={null}
@@ -651,7 +665,10 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
             date: dayjs(),
           }}
         >
-          <Form.Item<TransactionFieldType> name="type" label="Loại giao dịch">
+          <Form.Item<TransactionFieldType>
+            name="type"
+            label={t("dashboard.form.type")}
+          >
             <Radio.Group
               onChange={(e) => {
                 const newType = e.target.value;
@@ -661,18 +678,23 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
               className="w-full"
             >
               <Radio.Button value="expense" className="w-1/2 text-center">
-                Chi tiêu
+                {t("dashboard.form.expenseType")}
               </Radio.Button>
               <Radio.Button value="income" className="w-1/2 text-center">
-                Thu nhập
+                {t("dashboard.form.incomeType")}
               </Radio.Button>
             </Radio.Group>
           </Form.Item>
 
           <Form.Item<TransactionFieldType>
             name="amount"
-            label="Số tiền"
-            rules={[{ required: true, message: "Vui lòng nhập số tiền" }]}
+            label={t("dashboard.form.amount")}
+            rules={[
+              {
+                required: true,
+                message: t("dashboard.form.amountPlaceholder"),
+              },
+            ]}
           >
             <InputNumber<number>
               style={{ width: "100%" }}
@@ -683,7 +705,7 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
                 `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
               }
               parser={(value) => Number(value?.replace(/\$\s?|(,*)/g, "") || 0)}
-              placeholder="Nhập số tiền"
+              placeholder={t("dashboard.form.amountPlaceholder")}
               className="!text-2xl !font-semibold"
               inputMode="numeric"
             />
@@ -691,12 +713,17 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
 
           <Form.Item<TransactionFieldType>
             name="category"
-            label="Danh mục"
-            rules={[{ required: true, message: "Vui lòng chọn danh mục" }]}
+            label={t("dashboard.form.category")}
+            rules={[
+              {
+                required: true,
+                message: t("dashboard.form.categoryPlaceholder"),
+              },
+            ]}
           >
             <Select
               size="large"
-              placeholder="Tìm hoặc chọn danh mục"
+              placeholder={t("dashboard.form.categoryPlaceholder")}
               loading={loadingCategories}
               showSearch
               filterOption={(input, option) =>
@@ -717,11 +744,11 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
                     onClick={handleAddCategory}
                     className="w-full text-left"
                   >
-                    Thêm "{newCategoryName.trim()}"
+                    {t("dashboard.form.addCategory")} "{newCategoryName.trim()}"
                   </Button>
                 ) : (
                   <span className="text-gray-400">
-                    Nhập để tìm hoặc tạo mới
+                    {t("dashboard.form.categoryPlaceholder")}
                   </span>
                 )
               }
@@ -730,21 +757,24 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
 
           <Form.Item<TransactionFieldType>
             name="date"
-            label="Ngày"
-            rules={[{ required: true, message: "Vui lòng chọn ngày" }]}
+            label={t("dashboard.form.date")}
+            rules={[{ required: true, message: t("dashboard.form.date") }]}
           >
             <DatePicker
               className="w-full"
               size="large"
               format="DD/MM/YYYY"
-              placeholder="Chọn ngày"
+              placeholder={t("dashboard.form.date")}
             />
           </Form.Item>
 
-          <Form.Item<TransactionFieldType> name="note" label="Ghi chú">
+          <Form.Item<TransactionFieldType>
+            name="note"
+            label={t("dashboard.form.note")}
+          >
             <Input.TextArea
               rows={2}
-              placeholder="Nhập ghi chú (tùy chọn)"
+              placeholder={t("dashboard.form.notePlaceholder")}
               maxLength={200}
               showCount
             />
@@ -753,7 +783,7 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
           <Form.Item label={null} className="mb-0">
             <div className="flex gap-3">
               <Button block onClick={() => setIsModalOpen(false)}>
-                Hủy
+                {t("dashboard.form.cancel")}
               </Button>
               <Button
                 type="primary"
@@ -761,7 +791,7 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
                 block
                 loading={submitting}
               >
-                {editingTransaction ? "Cập nhật" : "Thêm"}
+                {t("dashboard.form.save")}
               </Button>
             </div>
           </Form.Item>

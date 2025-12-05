@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Divider } from "antd";
+import { Button } from "antd";
 import {
   ArrowLeftOutlined,
   UserAddOutlined,
@@ -15,27 +15,39 @@ import {
 } from "@ant-design/icons";
 import Link from "next/link";
 import Image from "next/image";
+import { useTranslation } from "react-i18next";
+import LanguageSwitcher from "../components/LanguageSwitcher";
 
 export default function HuongDanPage() {
+  const { t } = useTranslation();
+
+  // Helper to get array items from translation
+  const getItems = (key: string): string[] => {
+    return t(key, { returnObjects: true }) as string[];
+  };
+
   return (
     <div className="min-h-screen bg-gray-100">
-      {/* Header - giống Dashboard */}
+      {/* Header */}
       <header className="bg-blue-500 px-4 py-4 text-white">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <WalletOutlined className="text-xl" />
-            <span className="font-semibold">Money Notebook</span>
+            <span className="font-semibold">{t("app.name")}</span>
           </div>
-          <Link href="/">
-            <Button
-              type="text"
-              icon={<ArrowLeftOutlined />}
-              className="!text-white/80 hover:!text-white"
-              size="small"
-            />
-          </Link>
+          <div className="flex items-center gap-1">
+            <LanguageSwitcher variant="light" />
+            <Link href="/">
+              <Button
+                type="text"
+                icon={<ArrowLeftOutlined />}
+                className="!text-white/80 hover:!text-white"
+                size="small"
+              />
+            </Link>
+          </div>
         </div>
-        <p className="mt-1 text-xs text-blue-100">Hướng dẫn sử dụng</p>
+        <p className="mt-1 text-xs text-blue-100">{t("guide.title")}</p>
       </header>
 
       {/* Content */}
@@ -43,11 +55,9 @@ export default function HuongDanPage() {
         {/* Intro Card */}
         <div className="rounded-2xl bg-white p-4 shadow-md text-center">
           <h2 className="text-lg font-bold text-gray-800 mb-1">
-            Chào mừng bạn! 💰
+            {t("guide.welcome")} 💰
           </h2>
-          <p className="text-sm text-gray-600">
-            Làm theo các bước dưới đây để bắt đầu quản lý thu chi.
-          </p>
+          <p className="text-sm text-gray-600">{t("guide.intro")}</p>
         </div>
 
         {/* Step 1 */}
@@ -58,24 +68,22 @@ export default function HuongDanPage() {
             </div>
             <div>
               <h3 className="font-semibold text-gray-800">
-                Bước 1: Tạo mã đăng nhập
+                {t("guide.step1.title")}
               </h3>
               <p className="text-xs text-gray-500">
-                Nhấn "Tạo mã mới" để bắt đầu
+                {t("guide.step1.subtitle")}
               </p>
             </div>
           </div>
           <ul className="text-sm text-gray-600 space-y-1 ml-1">
-            <li>• Mã gồm 12 ký tự (chữ và số)</li>
-            <li>
-              • <strong>Quan trọng:</strong> Lưu lại mã này!
-            </li>
-            <li>• Không cần email hay mật khẩu</li>
+            {getItems("guide.step1.items").map((item, i) => (
+              <li key={i}>• {item}</li>
+            ))}
           </ul>
           <div className="mt-3 rounded-xl overflow-hidden border border-gray-200">
             <Image
               src="/guides/step1-create-code.png"
-              alt="Tạo mã đăng nhập"
+              alt={t("guide.step1.title")}
               width={400}
               height={300}
               className="w-full h-auto"
@@ -90,21 +98,23 @@ export default function HuongDanPage() {
               <LoginOutlined className="text-lg text-green-600" />
             </div>
             <div>
-              <h3 className="font-semibold text-gray-800">Bước 2: Đăng nhập</h3>
+              <h3 className="font-semibold text-gray-800">
+                {t("guide.step2.title")}
+              </h3>
               <p className="text-xs text-gray-500">
-                Nhập mã và nhấn "Truy cập"
+                {t("guide.step2.subtitle")}
               </p>
             </div>
           </div>
           <ul className="text-sm text-gray-600 space-y-1 ml-1">
-            <li>• Nhập mã 12 ký tự đã lưu</li>
-            <li>• Đăng nhập một lần, dùng mãi</li>
-            <li>• Dùng cùng mã trên nhiều thiết bị</li>
+            {getItems("guide.step2.items").map((item, i) => (
+              <li key={i}>• {item}</li>
+            ))}
           </ul>
           <div className="mt-3 rounded-xl overflow-hidden border border-gray-200">
             <Image
               src="/guides/step2-login.png"
-              alt="Màn hình đăng nhập"
+              alt={t("guide.step2.title")}
               width={400}
               height={300}
               className="w-full h-auto"
@@ -120,32 +130,22 @@ export default function HuongDanPage() {
             </div>
             <div>
               <h3 className="font-semibold text-gray-800">
-                Bước 3: Thêm giao dịch
+                {t("guide.step3.title")}
               </h3>
-              <p className="text-xs text-gray-500">Nhấn nút "Thêm giao dịch"</p>
+              <p className="text-xs text-gray-500">
+                {t("guide.step3.subtitle")}
+              </p>
             </div>
           </div>
           <ul className="text-sm text-gray-600 space-y-1 ml-1">
-            <li>
-              • <strong>Loại:</strong> Thu nhập hoặc Chi tiêu
-            </li>
-            <li>
-              • <strong>Số tiền:</strong> Nhập số VNĐ
-            </li>
-            <li>
-              • <strong>Danh mục:</strong> Chọn hoặc tạo mới
-            </li>
-            <li>
-              • <strong>Ngày:</strong> Chọn ngày giao dịch
-            </li>
-            <li>
-              • <strong>Ghi chú:</strong> Mô tả (tùy chọn)
-            </li>
+            {getItems("guide.step3.items").map((item, i) => (
+              <li key={i}>• {item}</li>
+            ))}
           </ul>
           <div className="mt-3 rounded-xl overflow-hidden border border-gray-200">
             <Image
               src="/guides/step3-add-transaction.png"
-              alt="Form thêm giao dịch"
+              alt={t("guide.step3.title")}
               width={400}
               height={300}
               className="w-full h-auto"
@@ -161,31 +161,22 @@ export default function HuongDanPage() {
             </div>
             <div>
               <h3 className="font-semibold text-gray-800">
-                Bước 4: Xem thống kê
+                {t("guide.step4.title")}
               </h3>
               <p className="text-xs text-gray-500">
-                Bảng tổng hợp ở đầu màn hình
+                {t("guide.step4.subtitle")}
               </p>
             </div>
           </div>
           <ul className="text-sm text-gray-600 space-y-1 ml-1">
-            <li>
-              • <strong className="text-blue-600">Số dư:</strong> Tổng thu -
-              Tổng chi
-            </li>
-            <li>
-              • <strong className="text-green-600">Thu nhập:</strong> Tổng các
-              khoản thu
-            </li>
-            <li>
-              • <strong className="text-red-600">Chi tiêu:</strong> Tổng các
-              khoản chi
-            </li>
+            {getItems("guide.step4.items").map((item, i) => (
+              <li key={i}>• {item}</li>
+            ))}
           </ul>
           <div className="mt-3 rounded-xl overflow-hidden border border-gray-200">
             <Image
               src="/guides/step4-stats.png"
-              alt="Bảng thống kê"
+              alt={t("guide.step4.title")}
               width={400}
               height={300}
               className="w-full h-auto"
@@ -201,26 +192,22 @@ export default function HuongDanPage() {
             </div>
             <div>
               <h3 className="font-semibold text-gray-800">
-                Bước 5: Lọc theo thời gian
+                {t("guide.step5.title")}
               </h3>
-              <p className="text-xs text-gray-500">Các nút lọc nhanh</p>
+              <p className="text-xs text-gray-500">
+                {t("guide.step5.subtitle")}
+              </p>
             </div>
           </div>
           <ul className="text-sm text-gray-600 space-y-1 ml-1">
-            <li>
-              • <strong>Tháng này/trước:</strong> Xem theo tháng
-            </li>
-            <li>
-              • <strong>7/30 ngày:</strong> Xem gần đây
-            </li>
-            <li>
-              • <strong>Tùy chọn:</strong> Chọn khoảng ngày
-            </li>
+            {getItems("guide.step5.items").map((item, i) => (
+              <li key={i}>• {item}</li>
+            ))}
           </ul>
           <div className="mt-3 rounded-xl overflow-hidden border border-gray-200">
             <Image
               src="/guides/step5-filter.png"
-              alt="Bộ lọc thời gian"
+              alt={t("guide.step5.title")}
               width={400}
               height={300}
               className="w-full h-auto"
@@ -236,25 +223,22 @@ export default function HuongDanPage() {
             </div>
             <div>
               <h3 className="font-semibold text-gray-800">
-                Bước 6: Sửa/Xóa giao dịch
+                {t("guide.step6.title")}
               </h3>
               <p className="text-xs text-gray-500">
-                Nút thao tác bên phải mỗi giao dịch
+                {t("guide.step6.subtitle")}
               </p>
             </div>
           </div>
           <ul className="text-sm text-gray-600 space-y-1 ml-1">
-            <li>
-              • ✏️ <strong>Sửa:</strong> Chỉnh sửa thông tin
-            </li>
-            <li>
-              • 🗑️ <strong>Xóa:</strong> Xóa giao dịch (có xác nhận)
-            </li>
+            {getItems("guide.step6.items").map((item, i) => (
+              <li key={i}>• {item}</li>
+            ))}
           </ul>
           <div className="mt-3 rounded-xl overflow-hidden border border-gray-200">
             <Image
               src="/guides/step6-edit-delete.png"
-              alt="Sửa/Xóa giao dịch"
+              alt={t("guide.step6.title")}
               width={400}
               height={300}
               className="w-full h-auto"
@@ -268,22 +252,16 @@ export default function HuongDanPage() {
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-100">
               <BulbOutlined className="text-lg text-blue-600" />
             </div>
-            <h3 className="font-semibold text-gray-800">💡 Mẹo hay</h3>
+            <h3 className="font-semibold text-gray-800">
+              {t("guide.tips.title")}
+            </h3>
           </div>
           <ul className="text-sm text-gray-700 space-y-2 ml-1">
-            <li>
-              • <strong>Copy mã nhanh:</strong> Nhấn{" "}
-              <CopyOutlined className="text-blue-500" /> ở header
-            </li>
-            <li>
-              • <strong>Tạo danh mục:</strong> Gõ tên mới khi thêm giao dịch
-            </li>
-            <li>
-              • <strong>Đồng bộ:</strong> Dùng cùng mã trên nhiều thiết bị
-            </li>
-            <li>
-              • <strong>Ghi ngay:</strong> Đừng quên ghi chép kịp thời!
-            </li>
+            {getItems("guide.tips.items").map((item, i) => (
+              <li key={i}>
+                • {item} {i === 0 && <CopyOutlined className="text-blue-500" />}
+              </li>
+            ))}
           </ul>
         </div>
 
@@ -295,7 +273,7 @@ export default function HuongDanPage() {
               size="large"
               className="!rounded-full !px-8 !h-12 !font-semibold !shadow-lg"
             >
-              Bắt đầu sử dụng ngay
+              {t("guide.startNow")}
             </Button>
           </Link>
         </div>
