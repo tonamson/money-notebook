@@ -482,7 +482,7 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
   const customHeaderRender = ({ value, onChange }: any) => {
     const year = value.year();
     const month = value.month();
-    
+
     const yearOptions = [];
     for (let i = year - 10; i <= year + 10; i++) {
       yearOptions.push(
@@ -491,18 +491,25 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
         </Select.Option>
       );
     }
-    
+
     const monthOptions = [];
     for (let i = 0; i < 12; i++) {
       monthOptions.push(
         <Select.Option key={i} value={i}>
-          {dayjs().month(i).format("MMM")}
+          {i + 1}
         </Select.Option>
       );
     }
-    
+
     return (
-      <div style={{ padding: 8, display: "flex", justifyContent: "flex-end", gap: 8 }}>
+      <div
+        style={{
+          padding: 8,
+          display: "flex",
+          justifyContent: "flex-end",
+          gap: 8,
+        }}
+      >
         <Select
           size="small"
           value={year}
