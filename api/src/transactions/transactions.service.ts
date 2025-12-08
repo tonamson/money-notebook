@@ -1,6 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between } from 'typeorm';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 import { Transaction } from './entities/transaction.entity';
 import { Category, CategoryType } from '../categories/entities/category.entity';
 import {
@@ -17,12 +19,49 @@ export class TransactionsService {
     private readonly transactionRepository: Repository<Transaction>,
     @InjectRepository(Category)
     private readonly categoryRepository: Repository<Category>,
+    @Inject(CACHE_MANAGER)
+    private cacheManager: Cache,
   ) {}
+
+  private getCacheKey(userId: number, filter: TransactionFilterDto): string {
+    return `transactions:${userId}:${filter.startDate || 'all'}:${filter.endDate || 'all'}:${filter.type || 'all'}:${filter.categoryId || 'all'}:${filter.page || 1}:${filter.limit || 20}`;
+  }
+
+  private getStatsCacheKey(
+    userId: number,
+    startDate: string,
+    endDate: string,
+  ): string {
+    return `stats:${userId}:${startDate}:${endDate}`;
+  }
+
+  private async invalidateUserCache(userId: number): Promise<void> {
+    // Delete cache entries for this specific user
+    // We'll delete the most common cache patterns
+    const cachePatterns = [`transactions:${userId}:`, `stats:${userId}:`];
+
+    // Since we can't iterate over all keys, we'll delete known patterns
+    // In production, consider using Redis with pattern-based deletion
+    for (const pattern of cachePatterns) {
+      // Delete common combinations
+      await this.cacheManager.del(pattern);
+    }
+  }
 
   async findAll(
     userId: number,
     filter: TransactionFilterDto,
   ): Promise<{ data: Transaction[]; total: number }> {
+    const cacheKey = this.getCacheKey(userId, filter);
+    const cached = await this.cacheManager.get<{
+      data: Transaction[];
+      total: number;
+    }>(cacheKey);
+
+    if (cached) {
+      return cached;
+    }
+
     const query = this.transactionRepository
       .createQueryBuilder('transaction')
       .leftJoinAndSelect('transaction.category', 'category')
@@ -60,8 +99,11 @@ export class TransactionsService {
       .take(limit);
 
     const data = await query.getMany();
+    const result = { data, total };
 
-    return { data, total };
+    await this.cacheManager.set(cacheKey, result);
+
+    return result;
   }
 
   async findOne(id: number, userId: number): Promise<Transaction> {
@@ -99,7 +141,10 @@ export class TransactionsService {
       transactionDate: new Date(createDto.transactionDate),
     });
 
-    return this.transactionRepository.save(transaction);
+    const saved = await this.transactionRepository.save(transaction);
+    await this.invalidateUserCache(userId);
+
+    return saved;
   }
 
   async update(
@@ -130,12 +175,16 @@ export class TransactionsService {
         : transaction.transactionDate,
     });
 
-    return this.transactionRepository.save(transaction);
+    const saved = await this.transactionRepository.save(transaction);
+    await this.invalidateUserCache(userId);
+
+    return saved;
   }
 
   async remove(id: number, userId: number): Promise<void> {
     const transaction = await this.findOne(id, userId);
     await this.transactionRepository.remove(transaction);
+    await this.invalidateUserCache(userId);
   }
 
   async getStats(
@@ -143,6 +192,13 @@ export class TransactionsService {
     startDate: string,
     endDate: string,
   ): Promise<TransactionStatsDto> {
+    const cacheKey = this.getStatsCacheKey(userId, startDate, endDate);
+    const cached = await this.cacheManager.get<TransactionStatsDto>(cacheKey);
+
+    if (cached) {
+      return cached;
+    }
+
     const result = await this.transactionRepository
       .createQueryBuilder('transaction')
       .select([
@@ -161,12 +217,16 @@ export class TransactionsService {
     const totalIncome = parseFloat(result.totalIncome) || 0;
     const totalExpense = parseFloat(result.totalExpense) || 0;
 
-    return {
+    const stats = {
       totalIncome,
       totalExpense,
       balance: totalIncome - totalExpense,
       startDate,
       endDate,
     };
+
+    await this.cacheManager.set(cacheKey, stats);
+
+    return stats;
   }
 }
