@@ -478,6 +478,57 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
     setDateRange([date.startOf("month"), date.endOf("month")]);
   };
 
+  // Custom header render to remove mode switcher (Month/Year buttons)
+  const customHeaderRender = ({ value, onChange }: any) => {
+    const year = value.year();
+    const month = value.month();
+    
+    const yearOptions = [];
+    for (let i = year - 10; i <= year + 10; i++) {
+      yearOptions.push(
+        <Select.Option key={i} value={i}>
+          {i}
+        </Select.Option>
+      );
+    }
+    
+    const monthOptions = [];
+    for (let i = 0; i < 12; i++) {
+      monthOptions.push(
+        <Select.Option key={i} value={i}>
+          {dayjs().month(i).format("MMM")}
+        </Select.Option>
+      );
+    }
+    
+    return (
+      <div style={{ padding: 8, display: "flex", justifyContent: "flex-end", gap: 8 }}>
+        <Select
+          size="small"
+          value={year}
+          onChange={(newYear) => {
+            const now = value.clone().year(newYear);
+            onChange(now);
+          }}
+          style={{ width: 80 }}
+        >
+          {yearOptions}
+        </Select>
+        <Select
+          size="small"
+          value={month}
+          onChange={(newMonth) => {
+            const now = value.clone().month(newMonth);
+            onChange(now);
+          }}
+          style={{ width: 80 }}
+        >
+          {monthOptions}
+        </Select>
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Header - Fixed height, not sticky */}
@@ -597,6 +648,7 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
             onPanelChange={onPanelChange}
             cellRender={cellRenderMobile}
             className="mobile-calendar"
+            headerRender={customHeaderRender}
           />
         </div>
 
@@ -608,6 +660,7 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
             onPanelChange={onPanelChange}
             cellRender={cellRenderDesktop}
             className="desktop-calendar"
+            headerRender={customHeaderRender}
           />
         </div>
 
