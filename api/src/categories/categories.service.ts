@@ -46,6 +46,7 @@ export class CategoriesService {
 
     // Try to get from cache first
     const cached = await this.cacheManager.get<Category[]>(cacheKey);
+    console.log('Cached categories:', cached, cacheKey);
     if (cached) {
       return cached;
     }
