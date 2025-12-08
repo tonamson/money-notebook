@@ -673,7 +673,7 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
                         {dayjs(tx.transactionDate).format("DD/MM/YYYY")}
                       </p>
                       <p className="truncate text-xs text-gray-400">
-                        {tx.note || t("dashboard.noTransactions")}
+                        {tx.note || t("dashboard.noNote")}
                       </p>
                     </div>
                     <div className="flex items-center gap-1">

@@ -32,6 +32,7 @@
     "addTransaction": "Add Transaction",
     "editTransaction": "Edit Transaction",
     "noTransactions": "No transactions yet",
+    "noNote": "No note",
     "startAdding": "Start adding your first transaction!",
     "codeCopied": "Login code copied",
     "copyFailed": "Cannot copy",

@@ -32,6 +32,7 @@
     "addTransaction": "Thêm giao dịch",
     "editTransaction": "Sửa giao dịch",
     "noTransactions": "Chưa có giao dịch nào",
+    "noNote": "Chưa có ghi chú",
     "startAdding": "Bắt đầu thêm giao dịch đầu tiên!",
     "codeCopied": "Đã copy mã đăng nhập",
     "copyFailed": "Không thể copy",

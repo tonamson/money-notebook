@@ -32,6 +32,7 @@
     "addTransaction": "添加交易",
     "editTransaction": "编辑交易",
     "noTransactions": "暂无交易",
+    "noNote": "无备注",
     "startAdding": "开始添加您的第一笔交易！",
     "codeCopied": "登录码已复制",
     "copyFailed": "无法复制",
