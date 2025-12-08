@@ -46,7 +46,7 @@ import { formatNumber, formatCompactNumber } from "../utils/format";
 type TransactionFieldType = {
   type: "income" | "expense";
   amount: number;
-  category: string;
+  categoryId: number;
   note?: string;
   date: Dayjs;
 };
@@ -135,14 +135,19 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
         endDate: dateRange[1].format("YYYY-MM-DD"),
       });
       if (response.success && response.data) {
-        setTransactions(response.data);
+        // Transform data to extract categoryName from category object
+        const transformedData = response.data.map((tx: any) => ({
+          ...tx,
+          categoryName: tx.category?.name || tx.categoryName || "",
+        }));
+        setTransactions(transformedData);
       }
     } catch {
       message.error(t("dashboard.messages.loadFailed"));
     } finally {
       setLoading(false);
     }
-  }, [dateRange, t]);
+  }, [dateRange, t, message]);
 
   // Load stats from API
   const loadStats = useCallback(async () => {
@@ -196,7 +201,7 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
         setExpenseCategories([...expenseCategories, result.data]);
       }
       setNewCategoryName("");
-      form.setFieldValue("category", result.data.name);
+      form.setFieldValue("categoryId", result.data.id);
       message.success(t("dashboard.messages.categoryAdded"));
     } else {
       message.error(result.error || t("dashboard.messages.categoryFailed"));
@@ -232,15 +237,21 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
 
   const handleEditTransaction = (record: Transaction) => {
     setEditingTransaction(record);
-    setTransactionType(record.type);
-    form.setFieldsValue({
-      type: record.type,
-      amount: record.amount,
-      category: record.categoryName,
-      note: record.note,
-      date: dayjs(record.transactionDate),
-    });
+    const newType = record.type;
+    setTransactionType(newType);
     setIsModalOpen(true);
+
+    // Set form values in next tick after transactionType state is updated
+    // This ensures the Select component has the correct options list
+    setTimeout(() => {
+      form.setFieldsValue({
+        type: record.type,
+        amount: record.amount,
+        categoryId: record.categoryId,
+        note: record.note,
+        date: dayjs(record.transactionDate),
+      });
+    }, 100);
   };
 
   const handleDeleteTransaction = async (id: number) => {
@@ -264,12 +275,7 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
   ) => {
     setSubmitting(true);
     try {
-      // Find category by name to get categoryId
-      const categories =
-        values.type === "income" ? incomeCategories : expenseCategories;
-      const category = categories.find((c) => c.name === values.category);
-
-      if (!category) {
+      if (!values.categoryId) {
         message.error("Danh mục không hợp lệ");
         setSubmitting(false);
         return;
@@ -278,7 +284,7 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
       const transactionData = {
         type: values.type,
         amount: values.amount,
-        categoryId: category.id,
+        categoryId: values.categoryId,
         note: values.note,
         transactionDate: values.date.format("YYYY-MM-DD"),
       };
@@ -763,7 +769,7 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
               onChange={(e) => {
                 const newType = e.target.value;
                 setTransactionType(newType);
-                form.setFieldValue("category", undefined);
+                form.setFieldValue("categoryId", undefined);
               }}
               className="w-full"
             >
@@ -802,7 +808,7 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
           </Form.Item>
 
           <Form.Item<TransactionFieldType>
-            name="category"
+            name="categoryId"
             label={t("dashboard.form.category")}
             rules={[
               {
@@ -812,6 +818,7 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
             ]}
           >
             <Select
+              key={transactionType}
               size="large"
               placeholder={t("dashboard.form.categoryPlaceholder")}
               loading={loadingCategories}
@@ -825,7 +832,7 @@ export default function Dashboard({ userCode, onLogout }: DashboardProps) {
               options={(transactionType === "income"
                 ? incomeCategories
                 : expenseCategories
-              ).map((cat) => ({ label: cat.name, value: cat.name }))}
+              ).map((cat) => ({ label: cat.name, value: cat.id }))}
               notFoundContent={
                 newCategoryName.trim() ? (
                   <Button
