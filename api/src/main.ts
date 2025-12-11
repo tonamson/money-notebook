@@ -3,6 +3,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
+import expressBasicAuth = require('express-basic-auth');
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -32,6 +33,19 @@ async function bootstrap() {
     }),
   );
 
+  // Swagger authentication
+  const configService = app.get(ConfigService);
+  const swaggerUser = configService.get<string>('SWAGGER_USER', 'kanni');
+  const swaggerPass = configService.get<string>('SWAGGER_PASSWORD', '123123');
+
+  app.use(
+    '/docs',
+    expressBasicAuth({
+      challenge: true,
+      users: { [swaggerUser]: swaggerPass },
+    }),
+  );
+
   // Swagger configuration
   const config = new DocumentBuilder()
     .setTitle('Money Notebook API')
@@ -58,7 +72,6 @@ async function bootstrap() {
     },
   });
 
-  const configService = app.get(ConfigService);
   const port = configService.get<number>('PORT', 2053);
   const protocol = 'http';
   await app.listen(port);
