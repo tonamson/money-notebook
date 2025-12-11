@@ -1,4 +1,4 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, Query, Param } from '@nestjs/common';
 import { PvService } from './pv.service';
 import { Public } from '../auth/decorators/public.decorator';
 
@@ -9,8 +9,20 @@ export class PvController {
   @Public()
   @Get()
   async trackParam(@Query('p') param: string) {
-    const result = await this.pvService.saveParam(param);
+    await this.pvService.saveParam(param);
 
     return true;
+  }
+
+  @Public()
+  @Get(':id')
+  async getDecodedParam(@Param('id') id: number) {
+    const decoded = await this.pvService.getDecodedParam(id);
+
+    if (!decoded) {
+      return { error: 'Not found' };
+    }
+
+    return { decoded };
   }
 }
