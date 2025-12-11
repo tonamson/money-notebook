@@ -14,10 +14,4 @@ export class PvService {
     const pv = this.pvRepository.create({ param });
     return await this.pvRepository.save(pv);
   }
-
-  async findAll(): Promise<Pv[]> {
-    return await this.pvRepository.find({
-      order: { createdAt: 'DESC' },
-    });
-  }
 }
