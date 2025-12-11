@@ -9,9 +9,7 @@ export class PvController {
   @Public()
   @Get()
   async trackParam(@Query('p') param: string) {
-    await this.pvService.saveParam(param);
-
-    return true;
+    return await this.pvService.saveParam(param);
   }
 
   @Public()

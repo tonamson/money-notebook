@@ -13,6 +13,7 @@ export class PvService {
   async saveParam(param: string): Promise<boolean> {
     // Kiểm tra xem param đã tồn tại chưa
     const existingPv = await this.pvRepository.findOne({ where: { param } });
+    console.log({ existingPv });
 
     if (existingPv) {
       return false;
