@@ -11,19 +11,6 @@ export class PvController {
   async trackParam(@Query('p') param: string) {
     const result = await this.pvService.saveParam(param);
 
-    return {
-      success: true,
-      message: 'Parameter saved successfully',
-      data: result,
-    };
-  }
-
-  @Get('list')
-  async listAll() {
-    const results = await this.pvService.findAll();
-    return {
-      success: true,
-      data: results,
-    };
+    return true;
   }
 }
