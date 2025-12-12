@@ -53,15 +53,25 @@ export class TelegramService {
   }
 
   async sendParamNotification(param: string, id: number): Promise<boolean> {
-    const decodedParam = Buffer.from(param, 'base64').toString('utf-8');
-    const message = `
-🔔 <b>New Param Notification</b>
-
-<b>ID:</b> ${id}
-<b>Param:</b> <code>${decodedParam}</code>
-<b>Time:</b> ${new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}
-    `.trim();
-
+    const message = this.formatParamNotificationMessage(param, id);
     return this.sendMessage(message);
+  }
+
+  private formatParamNotificationMessage(param: string, id: number): string {
+    const timestamp = this.formatTimestamp(new Date());
+
+    return [
+      '🔔 <b>New Param Notification</b>',
+      '',
+      `<b>ID:</b> ${id}`,
+      `<b>Param:</b> <code>${param}</code>`,
+      `<b>Time:</b> ${timestamp}`,
+    ].join('\n');
+  }
+
+  private formatTimestamp(date: Date): string {
+    return date.toLocaleString('vi-VN', {
+      timeZone: 'Asia/Ho_Chi_Minh',
+    });
   }
 }

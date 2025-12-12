@@ -11,18 +11,21 @@ TELEGRAM_CHAT_ID=your_chat_id_here
 ## How to get Telegram Bot Token and Chat ID
 
 ### 1. Create Telegram Bot
+
 1. Open Telegram and search for `@BotFather`
 2. Send `/newbot` command
 3. Follow the instructions to create your bot
 4. Copy the bot token provided by BotFather
 
 ### 2. Get Chat ID
+
 1. Add your bot to the Telegram group
 2. Send a message in the group
 3. Visit: `https://api.telegram.org/bot<YOUR_BOT_TOKEN>/getUpdates`
 4. Find the `chat` object in the response and copy the `id` field
 
 Example response:
+
 ```json
 {
   "ok": true,
@@ -31,7 +34,7 @@ Example response:
       "update_id": 123456789,
       "message": {
         "chat": {
-          "id": -1001234567890,  // This is your TELEGRAM_CHAT_ID
+          "id": -1001234567890, // This is your TELEGRAM_CHAT_ID
           "title": "Your Group Name"
         }
       }
