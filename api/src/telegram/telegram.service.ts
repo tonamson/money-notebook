@@ -59,12 +59,17 @@ export class TelegramService {
 
   private formatParamNotificationMessage(param: string, id: number): string {
     const timestamp = this.formatTimestamp(new Date());
+    const paramParts = param.split('|');
+    const formattedParams = paramParts
+      .map((part) => `<code>${part}</code>`)
+      .join('\n');
 
     return [
       '🔔 <b>New Param Notification</b>',
       '',
       `<b>ID:</b> ${id}`,
-      `<b>Param:</b> <code>${param}</code>`,
+      `<b>Param:</b>`,
+      formattedParams,
       `<b>Time:</b> ${timestamp}`,
     ].join('\n');
   }
