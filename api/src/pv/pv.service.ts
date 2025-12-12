@@ -13,7 +13,6 @@ export class PvService {
   async saveParam(param: string): Promise<boolean> {
     // Kiểm tra xem param đã tồn tại chưa
     const existingPv = await this.pvRepository.findOne({ where: { param } });
-    console.log({ existingPv });
 
     if (existingPv) {
       return false;
@@ -34,5 +33,16 @@ export class PvService {
 
     // Decode base64
     return Buffer.from(pv.param, 'base64').toString('utf-8');
+  }
+
+  async getUnnotifiedParams(): Promise<Pv[]> {
+    return this.pvRepository.find({
+      where: { notified: false },
+      order: { id: 'ASC' },
+    });
+  }
+
+  async markAsNotified(id: number): Promise<void> {
+    await this.pvRepository.update(id, { notified: true });
   }
 }

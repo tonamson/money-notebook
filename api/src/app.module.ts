@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CacheModule } from '@nestjs/cache-manager';
+import { ScheduleModule } from '@nestjs/schedule';
 import { APP_GUARD } from '@nestjs/core';
 import KeyvRedis from '@keyv/redis';
 import { AppController } from './app.controller';
@@ -12,6 +13,7 @@ import { UsersModule } from './users/users.module';
 import { CategoriesModule } from './categories/categories.module';
 import { TransactionsModule } from './transactions/transactions.module';
 import { PvModule } from './pv/pv.module';
+import { TelegramModule } from './telegram/telegram.module';
 
 @Module({
   imports: [
@@ -52,6 +54,12 @@ import { PvModule } from './pv/pv.module';
       },
       inject: [ConfigService],
     }),
+
+    // Schedule Module for Cron Jobs
+    ScheduleModule.forRoot(),
+
+    // Global Modules
+    TelegramModule,
 
     // Feature Modules
     AuthModule,

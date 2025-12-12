@@ -13,6 +13,9 @@ export class Pv {
   @Column({ type: 'text', nullable: true })
   param: string;
 
+  @Column({ type: 'boolean', default: false })
+  notified: boolean;
+
   @CreateDateColumn()
   createdAt: Date;
 }
