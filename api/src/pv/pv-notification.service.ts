@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PvService } from './pv.service';
 import { TelegramService } from '../telegram/telegram.service';
+import { CheckInstance } from 'src/utils/check-instance';
 
 @Injectable()
 export class PvNotificationService {
@@ -15,6 +16,8 @@ export class PvNotificationService {
 
   @Cron(CronExpression.EVERY_MINUTE)
   async handleNotifications() {
+    if (!CheckInstance.isInstance0()) return;
+
     if (this.isProcessing) {
       this.logger.log('Previous job still running, skipping this cycle');
       return;
